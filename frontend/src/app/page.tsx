@@ -17,7 +17,7 @@ export default function Home() {
     setError('');
     setVideoInfo(null);
     try {
-      const res = await fetch(`http://localhost:4000/api/info?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`https://mp3ok.onrender.com/api/info?url=${encodeURIComponent(url)}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch video info');
@@ -47,7 +47,7 @@ export default function Home() {
     }]);
 
     // Setup SSE connection
-    const evtSource = new EventSource(`http://localhost:4000/api/progress?id=${taskId}`);
+    const evtSource = new EventSource(`https://mp3ok.onrender.com/api/progress?id=${taskId}`);
 
     evtSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -75,7 +75,7 @@ export default function Home() {
     };
 
     // Trigger standard browser download
-    const downloadUrl = `http://localhost:4000/api/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&id=${taskId}`;
+    const downloadUrl = `https://mp3ok.onrender.com/api/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&id=${taskId}`;
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.style.display = 'none';
