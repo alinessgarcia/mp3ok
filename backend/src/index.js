@@ -22,6 +22,21 @@ const limiter = rateLimit({
   max: apiRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    if (req.method !== 'GET') {
+      return false;
+    }
+
+    const path = String(req.path || req.originalUrl || '');
+    return (
+      path.startsWith('/media/jobs') ||
+      path.startsWith('/thumbnails/jobs') ||
+      path.startsWith('/progress') ||
+      path.startsWith('/api/media/jobs') ||
+      path.startsWith('/api/thumbnails/jobs') ||
+      path.startsWith('/api/progress')
+    );
+  },
 });
 if (enableRateLimit) {
   app.use('/api', limiter);

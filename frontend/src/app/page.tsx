@@ -369,20 +369,28 @@ export default function Home() {
   }, [apiBase]);
 
   useEffect(() => {
+    if (activeTab !== 'media') {
+      return undefined;
+    }
+
     fetchMediaJobs().catch(() => {});
     const timer = setInterval(() => {
       fetchMediaJobs().catch(() => {});
-    }, 3000);
+    }, 10_000);
     return () => clearInterval(timer);
-  }, [fetchMediaJobs]);
+  }, [activeTab, fetchMediaJobs]);
 
   useEffect(() => {
+    if (activeTab !== 'thumb') {
+      return undefined;
+    }
+
     fetchThumbJobs().catch(() => {});
     const timer = setInterval(() => {
       fetchThumbJobs().catch(() => {});
-    }, 3000);
+    }, 10_000);
     return () => clearInterval(timer);
-  }, [fetchThumbJobs]);
+  }, [activeTab, fetchThumbJobs]);
 
   useEffect(() => {
     const activeIds = new Set(
