@@ -186,3 +186,20 @@ Keepalive automatico:
 - configurar secrets no GitHub:
   - `RENDER_API_BASE` = `https://mp3ok.onrender.com`
   - `NEWS_REFRESH_TOKEN` = token escolhido (se usar proteção)
+
+### yt-dlp (YouTube em cloud)
+
+Variáveis opcionais para reduzir bloqueios e permitir cookies no Render:
+
+- `YTDLP_JS_RUNTIMES` (default: `node`)
+- `YTDLP_COOKIES_FILE` (caminho de arquivo cookies.txt no servidor)
+- `YTDLP_COOKIES_B64` (conteúdo do cookies.txt em base64)
+- `YTDLP_USER_AGENT` (user-agent custom)
+- `YTDLP_RETRIES` (default: `8`)
+- `YTDLP_FRAGMENT_RETRIES` (default: `8`)
+- `YTDLP_RETRY_SLEEP` (default: `http:2`)
+
+Dica prática para Render:
+
+- use `YTDLP_COOKIES_B64` para não depender de arquivo físico.
+- exporte cookies do YouTube no formato Netscape e converta para base64.

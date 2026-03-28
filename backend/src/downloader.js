@@ -1,8 +1,12 @@
 const { spawn } = require('child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const EventEmitter = require('events');
 
 // Event emitter to broadcast progress events
 const progressEmitter = new EventEmitter();
+let cachedCookiesPath = null;
 
 function sanitizeFilename(name) {
     const raw = String(name || 'download');
@@ -66,6 +70,60 @@ function toNumericDuration(value) {
     return Math.round(numeric);
 }
 
+function resolveCookiesPath() {
+    if (cachedCookiesPath) {
+        return cachedCookiesPath;
+    }
+
+    const cookiesFileEnv = String(process.env.YTDLP_COOKIES_FILE || '').trim();
+    if (cookiesFileEnv && fs.existsSync(cookiesFileEnv)) {
+        cachedCookiesPath = cookiesFileEnv;
+        return cachedCookiesPath;
+    }
+
+    const cookiesB64 = String(process.env.YTDLP_COOKIES_B64 || '').trim();
+    if (!cookiesB64) {
+        return null;
+    }
+
+    try {
+        const decoded = Buffer.from(cookiesB64, 'base64').toString('utf8');
+        if (!decoded.includes('youtube.com')) {
+            return null;
+        }
+        const filePath = path.join(os.tmpdir(), 'yt-cookies.txt');
+        fs.writeFileSync(filePath, decoded, 'utf8');
+        cachedCookiesPath = filePath;
+        return cachedCookiesPath;
+    } catch {
+        return null;
+    }
+}
+
+function getCommonYtdlpArgs() {
+    const args = [];
+    const jsRuntimes = String(process.env.YTDLP_JS_RUNTIMES || 'node').trim();
+    if (jsRuntimes) {
+        args.push('--js-runtimes', jsRuntimes);
+    }
+
+    const cookiesPath = resolveCookiesPath();
+    if (cookiesPath) {
+        args.push('--cookies', cookiesPath);
+    }
+
+    const userAgent = String(process.env.YTDLP_USER_AGENT || '').trim();
+    if (userAgent) {
+        args.push('--user-agent', userAgent);
+    }
+
+    args.push('--retries', String(Math.max(1, Number(process.env.YTDLP_RETRIES || 8))));
+    args.push('--fragment-retries', String(Math.max(1, Number(process.env.YTDLP_FRAGMENT_RETRIES || 8))));
+    args.push('--retry-sleep', String(process.env.YTDLP_RETRY_SLEEP || 'http:2'));
+
+    return args;
+}
+
 /**
  * Fetch video metadata using yt-dlp
  */
@@ -75,6 +133,7 @@ const getInfo = (url) => {
         let errorData = '';
 
         const ytdlp = spawn('yt-dlp', [
+            ...getCommonYtdlpArgs(),
             '--dump-json',
             '--yes-playlist',
             url
@@ -210,13 +269,13 @@ const downloadMedia = (req, res, { url, format, quality, id, title }) => {
     let ytdlpArgs = [];
 
     if (format === 'audio') {
-        ytdlpArgs = ['--newline', '--yes-playlist', '-f', 'bestaudio', '-o', '-', url];
+        ytdlpArgs = [...getCommonYtdlpArgs(), '--newline', '--yes-playlist', '-f', 'bestaudio', '-o', '-', url];
     } else {
         let formatSelector = 'best';
         if (quality && quality !== 'best') {
             formatSelector = `bestvideo[height<=${quality}][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]`;
         }
-        ytdlpArgs = ['--newline', '--yes-playlist', '-f', formatSelector, '-o', '-', url];
+        ytdlpArgs = [...getCommonYtdlpArgs(), '--newline', '--yes-playlist', '-f', formatSelector, '-o', '-', url];
     }
 
     const ytdlp = spawn('yt-dlp', ytdlpArgs);
