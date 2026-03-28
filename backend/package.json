@@ -11,7 +11,10 @@
     "dependencies": {
         "cors": "^2.8.5",
         "express": "^4.19.2",
-        "express-rate-limit": "^7.2.0"
+        "express-rate-limit": "^7.2.0",
+        "gifsicle": "^7.0.1",
+        "multer": "^2.0.2",
+        "sharp": "^0.34.2"
     },
     "devDependencies": {
         "nodemon": "^3.1.0"

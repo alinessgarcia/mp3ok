@@ -1,219 +1,1335 @@
 'use client';
-import { useState } from 'react';
+
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+type DownloadStatus = 'downloading' | 'completed' | 'error';
+type MediaStatus = 'queued' | 'processing' | 'completed' | 'failed';
+type MediaOperation =
+  | 'optimize-gif'
+  | 'optimize-png'
+  | 'optimize-jpeg'
+  | 'mp4-to-gif'
+  | 'gif-to-mp4'
+  | 'optimize-mp4'
+  | 'mp4-to-mp3-segmented';
+type Preset = 'light' | 'balanced' | 'aggressive';
+type ThumbnailPreset = '16x9' | '1x1' | '9x16';
+
+type VideoEntry = {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  duration: number;
+  url: string;
+};
+
+type VideoInfo = {
+  title: string;
+  thumbnail?: string;
+  duration: number;
+  isPlaylist?: boolean;
+  entryCount?: number;
+  entries?: VideoEntry[];
+};
+
+type UrlTask = {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  progress: number;
+  size: string;
+  status: DownloadStatus;
+};
+
+type MediaJob = {
+  id: string;
+  status: MediaStatus;
+  progress: number;
+  progressLabel: string;
+  operation: MediaOperation;
+  preset: Preset;
+  inputName: string;
+  outputName: string | null;
+  sizeIn: number | null;
+  sizeOut: number | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string | null;
+};
+
+type ThumbnailJob = {
+  id: string;
+  status: MediaStatus;
+  progress: number;
+  progressLabel: string;
+  operation: 'thumbnail';
+  preset: ThumbnailPreset;
+  inputName: string;
+  outputName: string | null;
+  sizeIn: number | null;
+  sizeOut: number | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string | null;
+};
+
+function getApiBase() {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:4000`;
+  }
+  return 'http://localhost:4000';
+}
+
+function formatBytes(bytes: number | null) {
+  if (!bytes && bytes !== 0) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(1)} ${units[unit]}`;
+}
 
 export default function Home() {
-  const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [videoInfo, setVideoInfo] = useState<any>(null);
+  const apiBase = useMemo(() => getApiBase(), []);
 
-  const [format, setFormat] = useState('video');
+  const [activeTab, setActiveTab] = useState<'url' | 'media' | 'thumb'>('url');
+
+  const [url, setUrl] = useState('');
+  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [urlError, setUrlError] = useState('');
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [format, setFormat] = useState<'video' | 'audio'>('video');
   const [quality, setQuality] = useState('best');
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [urlTasks, setUrlTasks] = useState<UrlTask[]>([]);
+
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [mediaInputKey, setMediaInputKey] = useState(0);
+  const [mediaOperation, setMediaOperation] = useState<MediaOperation>('optimize-gif');
+  const [preset, setPreset] = useState<Preset>('balanced');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advancedCrf, setAdvancedCrf] = useState('28');
+  const [advancedWidth, setAdvancedWidth] = useState('600');
+  const [advancedFps, setAdvancedFps] = useState('10');
+  const [advancedQuality, setAdvancedQuality] = useState('75');
+  const [advancedLossy, setAdvancedLossy] = useState('60');
+  const [advancedColors, setAdvancedColors] = useState('256');
+  const [advancedSegmentMinutes, setAdvancedSegmentMinutes] = useState('20');
+
+  const [mediaJobs, setMediaJobs] = useState<MediaJob[]>([]);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState('');
+  const [mediaNotice, setMediaNotice] = useState('');
+
+  const [thumbInputMode, setThumbInputMode] = useState<'file' | 'url'>('file');
+  const [thumbFiles, setThumbFiles] = useState<File[]>([]);
+  const [thumbFileInputKey, setThumbFileInputKey] = useState(0);
+  const [thumbUrlsText, setThumbUrlsText] = useState('');
+  const [thumbPreset, setThumbPreset] = useState<ThumbnailPreset>('16x9');
+  const [thumbJobs, setThumbJobs] = useState<ThumbnailJob[]>([]);
+  const [selectedThumbIds, setSelectedThumbIds] = useState<Set<string>>(new Set());
+  const [thumbLoading, setThumbLoading] = useState(false);
+  const [thumbError, setThumbError] = useState('');
+  const [thumbNotice, setThumbNotice] = useState('');
+
+  const urlSseRef = useRef<Map<string, EventSource>>(new Map());
+  const urlTasksRef = useRef<Map<string, UrlTask>>(new Map());
+  const urlDownloadQueueRef = useRef<VideoEntry[]>([]);
+  const urlDownloadBusyRef = useRef(false);
+  const mediaSseRef = useRef<Map<string, EventSource>>(new Map());
+  const thumbSseRef = useRef<Map<string, EventSource>>(new Map());
+  const autoDownloadedMediaRef = useRef<Set<string>>(new Set());
+  const mediaHydratedRef = useRef(false);
+  const autoDownloadedThumbRef = useRef<Set<string>>(new Set());
+  const thumbHydratedRef = useRef(false);
+
+  useEffect(() => {
+    const map = new Map<string, UrlTask>();
+    urlTasks.forEach((task) => {
+      map.set(task.id, task);
+    });
+    urlTasksRef.current = map;
+  }, [urlTasks]);
 
   const fetchInfo = async () => {
     if (!url) return;
-    setLoading(true);
-    setError('');
+    setLoadingInfo(true);
+    setUrlError('');
     setVideoInfo(null);
     try {
-      const res = await fetch(`https://mp3ok.onrender.com/api/info?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`);
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to fetch video info');
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error || 'Failed to fetch video info');
       }
-      const data = await res.json();
-      setVideoInfo(data);
-    } catch (err: any) {
-      setError(err.message);
+      const data = (await res.json()) as VideoInfo;
+      const fallbackEntry: VideoEntry = {
+        id: 'single',
+        title: data?.title || 'Midia',
+        thumbnail: data?.thumbnail,
+        duration: Number(data?.duration || 0),
+        url,
+      };
+      const safeEntries = Array.isArray(data?.entries) && data.entries.length > 0 ? data.entries : [fallbackEntry];
+      setVideoInfo({
+        ...data,
+        entries: safeEntries,
+        entryCount: Number(data?.entryCount || safeEntries.length),
+        isPlaylist: Boolean(data?.isPlaylist || safeEntries.length > 1),
+      });
+    } catch (error) {
+      setUrlError(error instanceof Error ? error.message : 'Failed to fetch video info');
     } finally {
-      setLoading(false);
+      setLoadingInfo(false);
     }
   };
 
-  const startDownload = () => {
-    if (!videoInfo || !url) return;
+  const triggerSingleDownload = useCallback((entry: VideoEntry) => {
+    const targetUrl = entry?.url || url;
+    if (!targetUrl) return;
 
-    const taskId = Date.now().toString() + Math.random().toString(36).substring(7);
+    const taskId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    // Create new task entry
-    setTasks(prev => [...prev, {
-      id: taskId,
-      title: videoInfo.title,
-      thumbnail: videoInfo.thumbnail,
-      progress: 0,
-      size: 'Starting...',
-      status: 'downloading'
-    }]);
+    setUrlTasks((prev) => [
+      ...prev,
+      {
+        id: taskId,
+        title: entry.title || 'Midia',
+        thumbnail: entry.thumbnail,
+        progress: 0,
+        size: 'Starting...',
+        status: 'downloading',
+      },
+    ]);
 
-    // Setup SSE connection
-    const evtSource = new EventSource(`https://mp3ok.onrender.com/api/progress?id=${taskId}`);
+    const sse = new EventSource(`${apiBase}/api/progress?id=${taskId}`);
+    urlSseRef.current.set(taskId, sse);
 
-    evtSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setTasks(prev => prev.map(t => {
-        if (t.id === taskId) {
-          return { ...t, progress: data.percentage, size: data.size };
-        }
-        return t;
-      }));
-      if (data.percentage >= 100) {
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed', progress: 100 } : t));
-        evtSource.close();
+    sse.onmessage = (event) => {
+      const payload = JSON.parse(event.data) as {
+        percentage?: number;
+        size?: string;
+        status?: 'downloading' | 'completed' | 'error';
+        message?: string;
+      };
+      setUrlTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+          const nextStatus =
+            payload.status === 'completed'
+              ? 'completed'
+              : payload.status === 'error'
+                ? 'error'
+                : task.status;
+          return {
+            ...task,
+            progress: Number(payload.percentage || task.progress),
+            size: payload.size || task.size,
+            status: nextStatus,
+          };
+        }),
+      );
+
+      if (payload.status === 'completed' || payload.status === 'error') {
+        sse.close();
+        urlSseRef.current.delete(taskId);
       }
     };
 
-    evtSource.onerror = (err) => {
-      console.error("SSE Error:", err);
-      // Backend closes when stream is interrupted or finished. Assume success if progress > 95
-      setTasks(prev => prev.map(t => {
-        if (t.id === taskId && t.progress < 95) return { ...t, status: 'error' };
-        if (t.id === taskId && t.progress >= 95) return { ...t, status: 'completed', progress: 100 };
-        return t;
-      }));
-      evtSource.close();
+    sse.onerror = () => {
+      setUrlTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+          if (task.status === 'completed') return task;
+          return { ...task, status: 'error' };
+        }),
+      );
+      sse.close();
+      urlSseRef.current.delete(taskId);
     };
 
-    // Trigger standard browser download
-    const downloadUrl = `https://mp3ok.onrender.com/api/download?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&id=${taskId}`;
+    const downloadUrl = `${apiBase}/api/download?url=${encodeURIComponent(targetUrl)}&format=${format}&quality=${quality}&id=${taskId}&title=${encodeURIComponent(entry.title || 'download')}`;
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
+    return taskId;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiBase, format, quality, url]);
+
+  const startDownloadQueue = useCallback(() => {
+    if (urlDownloadBusyRef.current) return;
+    const next = urlDownloadQueueRef.current.shift();
+    if (!next) return;
+
+    urlDownloadBusyRef.current = true;
+    const taskId = triggerSingleDownload(next);
+    if (!taskId) {
+      urlDownloadBusyRef.current = false;
+      if (urlDownloadQueueRef.current.length > 0) {
+        window.setTimeout(() => startDownloadQueue(), 100);
+      }
+      return;
+    }
+
+    const watcher = window.setInterval(() => {
+      const task = urlTasksRef.current.get(taskId);
+      if (!task) return;
+      if (task.status === 'completed' || task.status === 'error') {
+        window.clearInterval(watcher);
+        urlDownloadBusyRef.current = false;
+        if (urlDownloadQueueRef.current.length > 0) {
+          window.setTimeout(() => startDownloadQueue(), 150);
+        }
+      }
+    }, 300);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSingleDownload]);
+
+  const startDownload = () => {
+    if (!videoInfo || !url) return;
+    const entries = Array.isArray(videoInfo.entries) && videoInfo.entries.length
+      ? videoInfo.entries
+      : [
+          {
+            id: 'single',
+            title: videoInfo.title,
+            thumbnail: videoInfo.thumbnail,
+            duration: videoInfo.duration || 0,
+            url,
+          },
+        ];
+
+    urlDownloadQueueRef.current = [...urlDownloadQueueRef.current, ...entries];
+    startDownloadQueue();
+  };
+
+  const fetchMediaJobs = useCallback(async () => {
+    const res = await fetch(`${apiBase}/api/media/jobs`, { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('Failed to load media jobs');
+    }
+    const data = await res.json();
+    const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+
+    if (!mediaHydratedRef.current) {
+      jobs
+        .filter((job: MediaJob) => job.status === 'completed')
+        .forEach((job: MediaJob) => autoDownloadedMediaRef.current.add(job.id));
+      mediaHydratedRef.current = true;
+    }
+
+    setMediaJobs(jobs);
+    setSelectedMediaIds((prev) => {
+      const next = new Set<string>();
+      const valid = new Set(jobs.map((job: MediaJob) => job.id));
+      Array.from(prev).forEach((id) => {
+        if (valid.has(id)) next.add(id);
+      });
+      return next;
+    });
+  }, [apiBase]);
+
+  const fetchThumbJobs = useCallback(async () => {
+    const res = await fetch(`${apiBase}/api/thumbnails/jobs`, { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('Failed to load thumbnail jobs');
+    }
+    const data = await res.json();
+    const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+
+    if (!thumbHydratedRef.current) {
+      jobs
+        .filter((job: ThumbnailJob) => job.status === 'completed')
+        .forEach((job: ThumbnailJob) => autoDownloadedThumbRef.current.add(job.id));
+      thumbHydratedRef.current = true;
+    }
+
+    setThumbJobs(jobs);
+    setSelectedThumbIds((prev) => {
+      const next = new Set<string>();
+      const valid = new Set(jobs.map((job: ThumbnailJob) => job.id));
+      Array.from(prev).forEach((id) => {
+        if (valid.has(id)) next.add(id);
+      });
+      return next;
+    });
+  }, [apiBase]);
+
+  useEffect(() => {
+    fetchMediaJobs().catch(() => {});
+    const timer = setInterval(() => {
+      fetchMediaJobs().catch(() => {});
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [fetchMediaJobs]);
+
+  useEffect(() => {
+    fetchThumbJobs().catch(() => {});
+    const timer = setInterval(() => {
+      fetchThumbJobs().catch(() => {});
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [fetchThumbJobs]);
+
+  useEffect(() => {
+    const activeIds = new Set(
+      mediaJobs
+        .filter((job) => job.status === 'queued' || job.status === 'processing')
+        .map((job) => job.id),
+    );
+
+    Array.from(activeIds).forEach((jobId) => {
+      if (mediaSseRef.current.has(jobId)) {
+        return;
+      }
+      const sse = new EventSource(`${apiBase}/api/media/jobs/${jobId}/progress`);
+      mediaSseRef.current.set(jobId, sse);
+
+      sse.onmessage = (event) => {
+        const payload: MediaJob = JSON.parse(event.data);
+        setMediaJobs((prev) => prev.map((job) => (job.id === payload.id ? payload : job)));
+      };
+
+      sse.onerror = () => {
+        sse.close();
+        mediaSseRef.current.delete(jobId);
+      };
+    });
+
+    Array.from(mediaSseRef.current.entries()).forEach(([jobId, source]) => {
+      if (!activeIds.has(jobId)) {
+        source.close();
+        mediaSseRef.current.delete(jobId);
+      }
+    });
+  }, [apiBase, mediaJobs]);
+
+  useEffect(() => {
+    const activeIds = new Set(
+      thumbJobs
+        .filter((job) => job.status === 'queued' || job.status === 'processing')
+        .map((job) => job.id),
+    );
+
+    Array.from(activeIds).forEach((jobId) => {
+      if (thumbSseRef.current.has(jobId)) {
+        return;
+      }
+      const sse = new EventSource(`${apiBase}/api/thumbnails/jobs/${jobId}/progress`);
+      thumbSseRef.current.set(jobId, sse);
+
+      sse.onmessage = (event) => {
+        const payload: ThumbnailJob = JSON.parse(event.data);
+        setThumbJobs((prev) => prev.map((job) => (job.id === payload.id ? payload : job)));
+      };
+
+      sse.onerror = () => {
+        sse.close();
+        thumbSseRef.current.delete(jobId);
+      };
+    });
+
+    Array.from(thumbSseRef.current.entries()).forEach(([jobId, source]) => {
+      if (!activeIds.has(jobId)) {
+        source.close();
+        thumbSseRef.current.delete(jobId);
+      }
+    });
+  }, [apiBase, thumbJobs]);
+
+  useEffect(() => {
+    const urlSources = urlSseRef.current;
+    const mediaSources = mediaSseRef.current;
+    const thumbSources = thumbSseRef.current;
+    return () => {
+      Array.from(urlSources.values()).forEach((source) => {
+        source.close();
+      });
+      Array.from(mediaSources.values()).forEach((source) => {
+        source.close();
+      });
+      Array.from(thumbSources.values()).forEach((source) => {
+        source.close();
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    const toDownload = mediaJobs.filter((job) => job.status === 'completed' && !autoDownloadedMediaRef.current.has(job.id));
+    toDownload.forEach((job, index) => {
+      autoDownloadedMediaRef.current.add(job.id);
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = `${apiBase}/api/media/jobs/${job.id}/download`;
+        a.download = job.outputName || 'media-output';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 300);
+    });
+  }, [apiBase, mediaJobs]);
+
+  useEffect(() => {
+    const toDownload = thumbJobs.filter((job) => job.status === 'completed' && !autoDownloadedThumbRef.current.has(job.id));
+    toDownload.forEach((job, index) => {
+      autoDownloadedThumbRef.current.add(job.id);
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = `${apiBase}/api/thumbnails/jobs/${job.id}/download`;
+        a.download = job.outputName || 'thumbnail.jpg';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 300);
+    });
+  }, [apiBase, thumbJobs]);
+
+  const buildAdvancedPayload = () => {
+    if (!showAdvanced) {
+      return null;
+    }
+
+    const payload: Record<string, string | number> = {};
+
+    if (mediaOperation === 'optimize-mp4' || mediaOperation === 'gif-to-mp4') {
+      payload.crf = Number(advancedCrf);
+    }
+    if (mediaOperation === 'mp4-to-gif') {
+      payload.width = Number(advancedWidth);
+      payload.fps = Number(advancedFps);
+    }
+    if (mediaOperation === 'optimize-png' || mediaOperation === 'optimize-jpeg') {
+      payload.quality = Number(advancedQuality);
+    }
+    if (mediaOperation === 'optimize-gif') {
+      payload.lossy = Number(advancedLossy);
+      payload.colors = Number(advancedColors);
+    }
+    if (mediaOperation === 'mp4-to-mp3-segmented') {
+      payload.segmentMinutes = Number(advancedSegmentMinutes);
+    }
+
+    return JSON.stringify(payload);
+  };
+
+  const createMediaJob = async (event: FormEvent) => {
+    event.preventDefault();
+    if (mediaFiles.length === 0) {
+      setMediaError('Escolha ao menos um arquivo antes de converter/otimizar.');
+      return;
+    }
+
+    setMediaLoading(true);
+    setMediaError('');
+    setMediaNotice('');
+
+    try {
+      const body = new FormData();
+      mediaFiles.forEach((file) => {
+        body.append('files', file);
+      });
+      body.set('operation', mediaOperation);
+      body.set('preset', preset);
+      const advanced = buildAdvancedPayload();
+      if (advanced) {
+        body.set('advanced', advanced);
+      }
+
+      const res = await fetch(`${apiBase}/api/media/jobs`, {
+        method: 'POST',
+        body,
+      });
+
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(payload?.error || 'Falha ao criar job de midia');
+      }
+
+      const added = Array.isArray(payload?.jobs) ? payload.jobs.length : payload?.id ? 1 : 0;
+      if (added === 0) {
+        throw new Error('Nenhum job foi adicionado na fila.');
+      }
+
+      const suffix = added > 1 ? 's' : '';
+      setMediaNotice(`${added} job${suffix} adicionado${suffix} com sucesso. Processamento iniciado na fila.`);
+      setMediaFiles([]);
+      setMediaInputKey((prev) => prev + 1);
+      await fetchMediaJobs();
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : 'Falha ao criar job');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const toggleMediaSelection = (id: string) => {
+    setSelectedMediaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedMediaIds.size === mediaJobs.length) {
+      setSelectedMediaIds(new Set());
+      return;
+    }
+    setSelectedMediaIds(new Set(mediaJobs.map((job) => job.id)));
+  };
+
+  const removeMediaByIds = async (ids: string[]) => {
+    if (!ids.length) return;
+    const res = await fetch(`${apiBase}/api/media/jobs/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null);
+      throw new Error(payload?.error || 'Falha ao remover itens');
+    }
+  };
+
+  const removeSingleMedia = async (id: string) => {
+    try {
+      await fetch(`${apiBase}/api/media/jobs/${id}`, { method: 'DELETE' });
+      autoDownloadedMediaRef.current.delete(id);
+      setSelectedMediaIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      await fetchMediaJobs();
+    } catch {
+      setMediaError('Falha ao remover item.');
+    }
+  };
+
+  const removeSelectedMedia = async () => {
+    if (selectedMediaIds.size === 0) return;
+    if (!window.confirm(`Remover ${selectedMediaIds.size} item(ns) selecionado(s)?`)) return;
+
+    setMediaLoading(true);
+    setMediaError('');
+    setMediaNotice('');
+    try {
+      const ids = Array.from(selectedMediaIds);
+      await removeMediaByIds(ids);
+      ids.forEach((id) => autoDownloadedMediaRef.current.delete(id));
+      setSelectedMediaIds(new Set());
+      await fetchMediaJobs();
+      setMediaNotice('Itens selecionados removidos.');
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : 'Falha ao remover selecionados');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const clearMediaQueue = async () => {
+    if (!mediaJobs.length) return;
+    if (!window.confirm('Limpar toda a fila de midia?')) return;
+
+    setMediaLoading(true);
+    setMediaError('');
+    setMediaNotice('');
+    try {
+      const res = await fetch(`${apiBase}/api/media/jobs`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Falha ao limpar fila');
+      autoDownloadedMediaRef.current = new Set();
+      setSelectedMediaIds(new Set());
+      await fetchMediaJobs();
+      setMediaNotice('Fila de midia limpa com sucesso.');
+    } catch (error) {
+      setMediaError(error instanceof Error ? error.message : 'Falha ao limpar fila');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const parseThumbUrls = () =>
+    thumbUrlsText
+      .split(/\r?\n/)
+      .map((url) => url.trim())
+      .filter(Boolean);
+
+  const createThumbnailJobs = async (event: FormEvent) => {
+    event.preventDefault();
+    setThumbLoading(true);
+    setThumbError('');
+    setThumbNotice('');
+
+    try {
+      let res: Response;
+      if (thumbInputMode === 'file') {
+        if (thumbFiles.length === 0) {
+          throw new Error('Escolha ao menos um arquivo para gerar thumbnails.');
+        }
+        const body = new FormData();
+        thumbFiles.forEach((file) => body.append('files', file));
+        body.set('operation', 'thumbnail');
+        body.set('preset', thumbPreset);
+        res = await fetch(`${apiBase}/api/thumbnails/jobs`, {
+          method: 'POST',
+          body,
+        });
+      } else {
+        const urls = parseThumbUrls();
+        if (urls.length === 0) {
+          throw new Error('Cole ao menos uma URL para gerar thumbnails.');
+        }
+        res = await fetch(`${apiBase}/api/thumbnails/jobs/url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'thumbnail',
+            preset: thumbPreset,
+            urls,
+          }),
+        });
+      }
+
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(payload?.error || 'Falha ao criar job de thumbnail');
+      }
+
+      const added = Array.isArray(payload?.jobs) ? payload.jobs.length : payload?.id ? 1 : 0;
+      if (added === 0) {
+        throw new Error('Nenhum job de thumbnail foi adicionado.');
+      }
+
+      const suffix = added > 1 ? 's' : '';
+      setThumbNotice(`${added} thumbnail${suffix} enfileirado${suffix} com sucesso.`);
+      setThumbFiles([]);
+      setThumbUrlsText('');
+      setThumbFileInputKey((prev) => prev + 1);
+      await fetchThumbJobs();
+    } catch (error) {
+      setThumbError(error instanceof Error ? error.message : 'Falha ao criar thumbnails');
+    } finally {
+      setThumbLoading(false);
+    }
+  };
+
+  const toggleThumbSelection = (id: string) => {
+    setSelectedThumbIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllThumb = () => {
+    if (selectedThumbIds.size === thumbJobs.length) {
+      setSelectedThumbIds(new Set());
+      return;
+    }
+    setSelectedThumbIds(new Set(thumbJobs.map((job) => job.id)));
+  };
+
+  const removeThumbByIds = async (ids: string[]) => {
+    if (!ids.length) return;
+    const res = await fetch(`${apiBase}/api/thumbnails/jobs/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null);
+      throw new Error(payload?.error || 'Falha ao remover thumbnails');
+    }
+  };
+
+  const removeSingleThumb = async (id: string) => {
+    try {
+      await fetch(`${apiBase}/api/thumbnails/jobs/${id}`, { method: 'DELETE' });
+      autoDownloadedThumbRef.current.delete(id);
+      setSelectedThumbIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      await fetchThumbJobs();
+    } catch {
+      setThumbError('Falha ao remover thumbnail.');
+    }
+  };
+
+  const removeSelectedThumbs = async () => {
+    if (selectedThumbIds.size === 0) return;
+    if (!window.confirm(`Remover ${selectedThumbIds.size} thumbnail(s) selecionada(s)?`)) return;
+
+    setThumbLoading(true);
+    setThumbError('');
+    setThumbNotice('');
+    try {
+      const ids = Array.from(selectedThumbIds);
+      await removeThumbByIds(ids);
+      ids.forEach((id) => autoDownloadedThumbRef.current.delete(id));
+      setSelectedThumbIds(new Set());
+      await fetchThumbJobs();
+      setThumbNotice('Thumbnails selecionadas removidas.');
+    } catch (error) {
+      setThumbError(error instanceof Error ? error.message : 'Falha ao remover selecionadas');
+    } finally {
+      setThumbLoading(false);
+    }
+  };
+
+  const clearThumbQueue = async () => {
+    if (!thumbJobs.length) return;
+    if (!window.confirm('Limpar toda a fila de thumbnails?')) return;
+
+    setThumbLoading(true);
+    setThumbError('');
+    setThumbNotice('');
+    try {
+      const res = await fetch(`${apiBase}/api/thumbnails/jobs`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Falha ao limpar fila de thumbnails');
+      autoDownloadedThumbRef.current = new Set();
+      setSelectedThumbIds(new Set());
+      await fetchThumbJobs();
+      setThumbNotice('Fila de thumbnails limpa com sucesso.');
+    } catch (error) {
+      setThumbError(error instanceof Error ? error.message : 'Falha ao limpar fila');
+    } finally {
+      setThumbLoading(false);
+    }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-4xl space-y-8">
-
-        {/* Header section */}
-        <div className="text-center">
-          <h1 className="text-5xl font-extrabold tracking-tight text-white mb-4">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">OpenDownloader</span>
-          </h1>
-          <p className="text-lg text-slate-300">
-            Download videos and audio from YouTube, Vimeo, Twitter & TikTok cleanly.
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-8">
+        <header className="rounded-3xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-800 p-8 shadow-2xl shadow-slate-900/40">
+          <p className="text-xs uppercase tracking-[0.26em] text-slate-400">OpenDownloader Local</p>
+          <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Downloader + Conversor + Otimizador + Thumbnails</h1>
+          <p className="mt-3 max-w-3xl text-sm text-slate-300 sm:text-base">
+            Ferramentas locais para download por URL, conversao/otimizacao de midia e geracao de thumbnails em lote.
           </p>
-        </div>
 
-        {/* Action Bar */}
-        <div className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-slate-700/50">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="url"
-              placeholder="Paste video URL here..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <button
-              onClick={fetchInfo}
-              disabled={loading || !url}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              type="button"
+              onClick={() => setActiveTab('url')}
+              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'url' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
             >
-              {loading ? 'Fetching...' : 'Fetch Media'}
+              Downloader por URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('media')}
+              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'media' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+            >
+              Conversao / Otimizacao
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('thumb')}
+              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'thumb' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+            >
+              Thumbnail Studio
             </button>
           </div>
-          {error && <p className="mt-3 text-red-400 text-sm">{error}</p>}
-        </div>
+        </header>
 
-        {/* Media Info Card */}
-        {videoInfo && (
-          <div className="bg-slate-800/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-xl border border-slate-700/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col md:flex-row">
-              <div className="md:w-1/3 relative aspect-video md:aspect-auto">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={videoInfo.thumbnail} alt="Thumbnail" className="w-full h-full object-cover" />
+        {activeTab === 'url' ? (
+          <section className="mt-6 space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="url"
+                  placeholder="Cole uma URL de video..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="h-12 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={fetchInfo}
+                  disabled={loadingInfo || !url}
+                  className="h-12 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {loadingInfo ? 'Buscando...' : 'Buscar midia'}
+                </button>
               </div>
-              <div className="p-6 md:w-2/3 flex flex-col justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-2 line-clamp-2">{videoInfo.title}</h2>
-                  <p className="text-slate-400 text-sm mb-6">Duration: {Math.floor(videoInfo.duration / 60)}:{(videoInfo.duration % 60).toString().padStart(2, '0')}</p>
-                </div>
+              {urlError ? <p className="mt-3 text-sm text-rose-400">{urlError}</p> : null}
+            </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 items-end">
-                  <div className="flex-1 w-full">
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Format</label>
-                    <select
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    >
-                      <option value="video">MP4 Video</option>
-                      <option value="audio">MP3 Audio</option>
-                    </select>
+            {videoInfo ? (
+              <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                  <div className="h-32 w-full overflow-hidden rounded-xl bg-slate-800 sm:w-56">
+                    {videoInfo.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={videoInfo.thumbnail} alt={videoInfo.title} className="h-full w-full object-cover" />
+                    ) : null}
                   </div>
-
-                  {format === 'video' && (
-                    <div className="flex-1 w-full">
-                      <label className="block text-sm font-medium text-slate-400 mb-1">Quality</label>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-bold">{videoInfo.title}</h2>
+                    {videoInfo.isPlaylist ? (
+                      <p className="mt-1 text-sm text-slate-400">
+                        Playlist detectada: {videoInfo.entryCount || videoInfo.entries?.length || 0} item(ns). O download sera feito em fila, um por vez.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-400">
+                        Duracao: {Math.floor(videoInfo.duration / 60)}:{(videoInfo.duration % 60).toString().padStart(2, '0')}
+                      </p>
+                    )}
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <select
+                        value={format}
+                        onChange={(e) => setFormat(e.target.value as 'video' | 'audio')}
+                        className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                      >
+                        <option value="video">MP4 Video</option>
+                        <option value="audio">MP3 Audio</option>
+                      </select>
                       <select
                         value={quality}
                         onChange={(e) => setQuality(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                        disabled={format === 'audio'}
                       >
-                        <option value="best">Best Available</option>
+                        <option value="best">Best</option>
                         <option value="1080">1080p</option>
                         <option value="720">720p</option>
                         <option value="480">480p</option>
                       </select>
+                      <button
+                        onClick={startDownload}
+                        className="h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500"
+                      >
+                        {videoInfo.isPlaylist ? 'Download Lista' : 'Download'}
+                      </button>
                     </div>
-                  )}
-
-                  <button
-                    onClick={startDownload}
-                    className="w-full sm:w-auto px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Download
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            ) : null}
 
-        {/* Downloads Queue */}
-        {tasks.length > 0 && (
-          <div className="bg-slate-800/30 rounded-2xl p-6 border border-slate-700/30">
-            <h3 className="text-lg font-semibold text-white mb-4">Downloads Queue</h3>
-            <div className="space-y-4">
-              {tasks.map(task => (
-                <div key={task.id} className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 flex flex-col sm:flex-row items-center gap-4">
-                  <div className="w-16 h-12 bg-slate-800 rounded flex-shrink-0 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {task.thumbnail && <img src={task.thumbnail} alt="" className="w-full h-full object-cover" />}
-                  </div>
-
-                  <div className="flex-1 min-w-0 w-full">
-                    <div className="flex justify-between items-end mb-1">
-                      <p className="text-sm font-medium text-white truncate pr-4">{task.title}</p>
-                      <span className="text-xs text-slate-400 whitespace-nowrap">
-                        {task.status === 'error' ? 'Failed' :
-                          task.status === 'completed' ? 'Done' :
-                            `${task.progress.toFixed(1)}%`}
-                      </span>
+            {urlTasks.length ? (
+              <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+                <h3 className="mb-4 text-lg font-semibold">Fila de downloads por URL</h3>
+                <div className="space-y-3">
+                  {urlTasks.map((task) => (
+                    <div key={task.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                      <div className="flex justify-between gap-3">
+                        <p className="truncate text-sm font-semibold">{task.title}</p>
+                        <p className="text-xs text-slate-400">
+                          {task.status === 'error' ? 'Falhou' : task.status === 'completed' ? 'Concluido' : `${task.progress.toFixed(1)}%`}
+                        </p>
+                      </div>
+                      <div className="mt-2 h-2 w-full rounded-full bg-slate-800">
+                        <div
+                          className={`h-2 rounded-full ${task.status === 'error' ? 'bg-rose-500' : task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                          style={{ width: `${task.progress}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">{task.size}</p>
                     </div>
-
-                    <div className="w-full bg-slate-800 rounded-full h-2 mb-1 overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${task.status === 'error' ? 'bg-red-500' :
-                          task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500'
-                          }`}
-                        style={{ width: `${task.progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-slate-500 flex justify-between">
-                      <span>{task.size}</span>
-                      {task.status === 'downloading' && <span>Downloading...</span>}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ) : null}
+          </section>
+        ) : activeTab === 'media' ? (
+          <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+            <div className="space-y-4">
+              <form onSubmit={createMediaJob} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+                <h3 className="text-lg font-semibold">Novo job de conversao/otimizacao</h3>
+                <div className="mt-4 space-y-3">
+                  <input
+                    key={mediaInputKey}
+                    type="file"
+                    multiple
+                    onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
+                    className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                    accept="video/*,image/gif,image/png,image/jpeg"
+                  />
+                  <p className="text-xs text-slate-400">
+                    {mediaFiles.length > 0
+                      ? `${mediaFiles.length} arquivo(s) selecionado(s): ${mediaFiles
+                          .slice(0, 3)
+                          .map((file) => file.name)
+                          .join(', ')}${mediaFiles.length > 3 ? ' ...' : ''}`
+                      : 'Selecione um ou varios arquivos para processar em lote.'}
+                  </p>
+                  <select
+                    value={mediaOperation}
+                    onChange={(e) => setMediaOperation(e.target.value as MediaOperation)}
+                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                  >
+                    <option value="optimize-gif">Otimizar GIF</option>
+                    <option value="optimize-png">Otimizar PNG</option>
+                    <option value="optimize-jpeg">Otimizar JPEG</option>
+                    <option value="mp4-to-gif">Converter MP4 para GIF</option>
+                    <option value="gif-to-mp4">Converter GIF para MP4</option>
+                    <option value="optimize-mp4">Otimizar MP4</option>
+                    <option value="mp4-to-mp3-segmented">Converter MP4 para MP3 (dividido)</option>
+                  </select>
+                  <select
+                    value={preset}
+                    onChange={(e) => setPreset(e.target.value as Preset)}
+                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                  >
+                    <option value="light">Leve</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="aggressive">Agressivo</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced((v) => !v)}
+                    className="h-11 w-full rounded-xl border border-slate-600 text-sm font-semibold text-slate-200"
+                  >
+                    {showAdvanced ? 'Ocultar avancado' : 'Mostrar avancado'}
+                  </button>
+
+                  {showAdvanced ? (
+                    <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <label className="text-xs text-slate-300">
+                          CRF
+                          <input
+                            value={advancedCrf}
+                            onChange={(e) => setAdvancedCrf(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          Width
+                          <input
+                            value={advancedWidth}
+                            onChange={(e) => setAdvancedWidth(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          FPS
+                          <input
+                            value={advancedFps}
+                            onChange={(e) => setAdvancedFps(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          Quality
+                          <input
+                            value={advancedQuality}
+                            onChange={(e) => setAdvancedQuality(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          GIF Lossy
+                          <input
+                            value={advancedLossy}
+                            onChange={(e) => setAdvancedLossy(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          GIF Colors
+                          <input
+                            value={advancedColors}
+                            onChange={(e) => setAdvancedColors(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs text-slate-300">
+                          Segment Minutes
+                          <input
+                            value={advancedSegmentMinutes}
+                            onChange={(e) => setAdvancedSegmentMinutes(e.target.value)}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    disabled={mediaLoading}
+                    className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+                  >
+                    {mediaLoading ? 'Processando...' : mediaFiles.length > 1 ? 'Criar jobs em lote' : 'Criar job'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={removeSelectedMedia}
+                  disabled={mediaLoading || selectedMediaIds.size === 0}
+                  className="h-11 rounded-xl border border-rose-400 bg-slate-900 text-sm font-semibold text-rose-300 disabled:opacity-50"
+                >
+                  Remover selecionados ({selectedMediaIds.size})
+                </button>
+                <button
+                  type="button"
+                  onClick={clearMediaQueue}
+                  disabled={mediaLoading || mediaJobs.length === 0}
+                  className="h-11 rounded-xl border border-slate-500 bg-slate-900 text-sm font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  Limpar fila
+                </button>
+              </div>
+
+              {mediaError ? <p className="text-sm text-rose-400">{mediaError}</p> : null}
+              {mediaNotice ? <p className="text-sm text-emerald-400">{mediaNotice}</p> : null}
             </div>
-          </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Fila de midia</h3>
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  disabled={mediaJobs.length === 0}
+                  className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  {selectedMediaIds.size === mediaJobs.length && mediaJobs.length > 0 ? 'Desmarcar todos' : 'Marcar todos'}
+                </button>
+              </div>
+
+              {mediaJobs.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+                  Nenhum job de midia ainda.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {mediaJobs.map((job) => (
+                    <article key={job.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedMediaIds.has(job.id)}
+                            onChange={() => toggleMediaSelection(job.id)}
+                            className="mt-1 h-4 w-4"
+                          />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-100">{job.outputName || job.inputName}</p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              {job.operation} | {job.preset} | {formatBytes(job.sizeIn)} {'->'} {formatBytes(job.sizeOut)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded-full border border-slate-600 px-2 py-1 text-xs uppercase tracking-wide text-slate-300">
+                          {job.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 h-2 w-full rounded-full bg-slate-800">
+                        <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${job.progress || 0}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">{job.progressLabel || '-'}</p>
+                      {job.error ? <p className="mt-1 text-xs text-rose-400">{job.error}</p> : null}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {job.status === 'completed' ? (
+                          <a
+                            href={`${apiBase}/api/media/jobs/${job.id}/download`}
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+                          >
+                            Baixar agora
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => removeSingleMedia(job.id)}
+                          className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-300"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+            <div className="space-y-4">
+              <form onSubmit={createThumbnailJobs} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+                <h3 className="text-lg font-semibold">Thumbnail Studio</h3>
+                <div className="mt-4 space-y-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setThumbInputMode('file')}
+                      className={`h-11 rounded-xl text-sm font-semibold ${thumbInputMode === 'file' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white'}`}
+                    >
+                      Arquivos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setThumbInputMode('url')}
+                      className={`h-11 rounded-xl text-sm font-semibold ${thumbInputMode === 'url' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white'}`}
+                    >
+                      URLs
+                    </button>
+                  </div>
+
+                  {thumbInputMode === 'file' ? (
+                    <>
+                      <input
+                        key={thumbFileInputKey}
+                        type="file"
+                        multiple
+                        onChange={(e) => setThumbFiles(Array.from(e.target.files || []))}
+                        className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                        accept="image/*,video/*"
+                      />
+                      <p className="text-xs text-slate-400">
+                        {thumbFiles.length > 0
+                          ? `${thumbFiles.length} arquivo(s) selecionado(s).`
+                          : 'Selecione imagens, GIFs ou videos para gerar thumbnails.'}
+                      </p>
+                    </>
+                  ) : (
+                    <textarea
+                      value={thumbUrlsText}
+                      onChange={(e) => setThumbUrlsText(e.target.value)}
+                      placeholder="Cole URLs (uma por linha). Suporta URL direta e link de arquivo do Google Drive."
+                      className="h-32 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                    />
+                  )}
+
+                  <select
+                    value={thumbPreset}
+                    onChange={(e) => setThumbPreset(e.target.value as ThumbnailPreset)}
+                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                  >
+                    <option value="16x9">16:9 (1280x720)</option>
+                    <option value="1x1">1:1 (1080x1080)</option>
+                    <option value="9x16">9:16 (1080x1920)</option>
+                  </select>
+
+                  <button
+                    type="submit"
+                    disabled={thumbLoading}
+                    className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+                  >
+                    {thumbLoading ? 'Gerando...' : 'Gerar thumbnails'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={removeSelectedThumbs}
+                  disabled={thumbLoading || selectedThumbIds.size === 0}
+                  className="h-11 rounded-xl border border-rose-400 bg-slate-900 text-sm font-semibold text-rose-300 disabled:opacity-50"
+                >
+                  Remover selecionados ({selectedThumbIds.size})
+                </button>
+                <button
+                  type="button"
+                  onClick={clearThumbQueue}
+                  disabled={thumbLoading || thumbJobs.length === 0}
+                  className="h-11 rounded-xl border border-slate-500 bg-slate-900 text-sm font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  Limpar fila
+                </button>
+              </div>
+
+              {thumbError ? <p className="text-sm text-rose-400">{thumbError}</p> : null}
+              {thumbNotice ? <p className="text-sm text-emerald-400">{thumbNotice}</p> : null}
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Fila de thumbnails</h3>
+                <button
+                  type="button"
+                  onClick={toggleSelectAllThumb}
+                  disabled={thumbJobs.length === 0}
+                  className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                >
+                  {selectedThumbIds.size === thumbJobs.length && thumbJobs.length > 0 ? 'Desmarcar todos' : 'Marcar todos'}
+                </button>
+              </div>
+
+              {thumbJobs.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+                  Nenhum job de thumbnail ainda.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {thumbJobs.map((job) => (
+                    <article key={job.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedThumbIds.has(job.id)}
+                            onChange={() => toggleThumbSelection(job.id)}
+                            className="mt-1 h-4 w-4"
+                          />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-100">{job.outputName || job.inputName}</p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              {job.preset} | {formatBytes(job.sizeIn)} {'->'} {formatBytes(job.sizeOut)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded-full border border-slate-600 px-2 py-1 text-xs uppercase tracking-wide text-slate-300">
+                          {job.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 h-2 w-full rounded-full bg-slate-800">
+                        <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${job.progress || 0}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">{job.progressLabel || '-'}</p>
+                      {job.error ? <p className="mt-1 text-xs text-rose-400">{job.error}</p> : null}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {job.status === 'completed' ? (
+                          <a
+                            href={`${apiBase}/api/thumbnails/jobs/${job.id}/download`}
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+                          >
+                            Baixar agora
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => removeSingleThumb(job.id)}
+                          className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-300"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         )}
       </div>
     </main>
