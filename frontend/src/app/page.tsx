@@ -817,55 +817,90 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-8">
-        <header className="rounded-3xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-800 p-8 shadow-2xl shadow-slate-900/40">
-          <p className="text-xs uppercase tracking-[0.26em] text-slate-400">OpenDownloader Local</p>
-          <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Downloader + Conversor + Otimizador + Thumbnails</h1>
-          <p className="mt-3 max-w-3xl text-sm text-slate-300 sm:text-base">
-            Ferramentas locais para download por URL, conversao/otimizacao de midia e geracao de thumbnails em lote.
-          </p>
+    <main className="min-h-screen text-[#dae2fd] selection:bg-[#c3c0ff] selection:text-[#272377]">
+      <nav className="fixed top-0 z-50 w-full border-b border-[#454652]/20 bg-[#0b1326]/70 backdrop-blur-2xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">OpenDownloader Local</p>
+            <p className="mt-1 text-lg font-extrabold tracking-tight text-[#e2dfff]">Transcoder.ai</p>
+          </div>
+          <div className="rounded-full border border-[#454652]/35 bg-[#171f33]/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#bdf4ff]">
+            Digital Alchemist
+          </div>
+        </div>
+      </nav>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-14 pt-28 sm:px-8">
+        <header className="relative overflow-hidden rounded-[28px] border border-[#454652]/30 bg-gradient-to-br from-[#171f33] via-[#131b2e] to-[#0b1326] p-8 shadow-[0_20px_60px_rgba(6,14,32,0.55)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(195,192,255,0.16),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(157,240,255,0.1),transparent_38%)]" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#454652]/35 bg-[#222a3d]/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#c3c0ff]">
+              <span className="h-2 w-2 rounded-full bg-[#9cf0ff] shadow-[0_0_10px_rgba(157,240,255,0.9)]" />
+              Processamento em tempo real
+            </div>
+            <h1 className="mt-4 max-w-4xl text-3xl font-black leading-tight text-[#e2dfff] sm:text-5xl">
+              De URL para midia em segundos.
+              <span className="block bg-gradient-to-r from-[#c3c0ff] via-[#bdf4ff] to-[#5250a4] bg-clip-text text-transparent">
+                Downloader + Conversor + Otimizador + Thumbnail Studio
+              </span>
+            </h1>
+            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#c5c5d4] sm:text-base">
+              Cole links, processe arquivos em lote e gere resultados com fila automatica em um painel visual premium.
+            </p>
+          </div>
+
+          <div className="relative mt-8 grid gap-3 sm:grid-cols-3">
             <button
               type="button"
               onClick={() => setActiveTab('url')}
-              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'url' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+                activeTab === 'url'
+                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
+                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+              }`}
             >
-              Downloader por URL
+              Downloader
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('media')}
-              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'media' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+                activeTab === 'media'
+                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
+                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+              }`}
             >
-              Conversao / Otimizacao
+              Conversor
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('thumb')}
-              className={`h-12 rounded-xl text-sm font-bold transition ${activeTab === 'thumb' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+                activeTab === 'thumb'
+                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
+                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+              }`}
             >
-              Thumbnail Studio
+              Thumbnails
             </button>
           </div>
         </header>
 
         {activeTab === 'url' ? (
           <section className="mt-6 space-y-6">
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+            <div className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="url"
                   placeholder="Cole uma URL de video..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="h-12 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm outline-none focus:border-blue-500"
+                  className="h-12 flex-1 rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 text-sm outline-none focus:border-[#c3c0ff]"
                 />
                 <button
                   onClick={fetchInfo}
                   disabled={loadingInfo || !url}
-                  className="h-12 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white disabled:opacity-50"
+                  className="h-12 rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] px-6 text-sm font-semibold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-50"
                 >
                   {loadingInfo ? 'Buscando...' : 'Buscar midia'}
                 </button>
@@ -874,7 +909,7 @@ export default function Home() {
             </div>
 
             {videoInfo ? (
-              <div className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+              <div className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                   <div className="h-32 w-full overflow-hidden rounded-xl bg-slate-800 sm:w-56">
                     {videoInfo.thumbnail ? (
@@ -897,7 +932,7 @@ export default function Home() {
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value as 'video' | 'audio')}
-                        className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                        className="h-11 rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                       >
                         <option value="video">MP4 Video</option>
                         <option value="audio">MP3 Audio</option>
@@ -905,7 +940,7 @@ export default function Home() {
                       <select
                         value={quality}
                         onChange={(e) => setQuality(e.target.value)}
-                        className="h-11 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                        className="h-11 rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                         disabled={format === 'audio'}
                       >
                         <option value="best">Best</option>
@@ -915,7 +950,7 @@ export default function Home() {
                       </select>
                       <button
                         onClick={startDownload}
-                        className="h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500"
+                        className="h-11 rounded-xl bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-4 text-sm font-semibold text-[#00363d] hover:brightness-110"
                       >
                         {videoInfo.isPlaylist ? 'Download Lista' : 'Download'}
                       </button>
@@ -926,11 +961,11 @@ export default function Home() {
             ) : null}
 
             {urlTasks.length ? (
-              <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+              <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
                 <h3 className="mb-4 text-lg font-semibold">Fila de downloads por URL</h3>
                 <div className="space-y-3">
                   {urlTasks.map((task) => (
-                    <div key={task.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                    <div key={task.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
                       <div className="flex justify-between gap-3">
                         <p className="truncate text-sm font-semibold">{task.title}</p>
                         <p className="text-xs text-slate-400">
@@ -953,7 +988,7 @@ export default function Home() {
         ) : activeTab === 'media' ? (
           <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             <div className="space-y-4">
-              <form onSubmit={createMediaJob} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+              <form onSubmit={createMediaJob} className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
                 <h3 className="text-lg font-semibold">Novo job de conversao/otimizacao</h3>
                 <div className="mt-4 space-y-3">
                   <input
@@ -961,7 +996,7 @@ export default function Home() {
                     type="file"
                     multiple
                     onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
-                    className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                    className="block w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 py-3 text-sm"
                     accept="video/*,image/gif,image/png,image/jpeg"
                   />
                   <p className="text-xs text-slate-400">
@@ -975,7 +1010,7 @@ export default function Home() {
                   <select
                     value={mediaOperation}
                     onChange={(e) => setMediaOperation(e.target.value as MediaOperation)}
-                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                   >
                     <option value="optimize-gif">Otimizar GIF</option>
                     <option value="optimize-png">Otimizar PNG</option>
@@ -988,7 +1023,7 @@ export default function Home() {
                   <select
                     value={preset}
                     onChange={(e) => setPreset(e.target.value as Preset)}
-                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                   >
                     <option value="light">Leve</option>
                     <option value="balanced">Balanced</option>
@@ -1004,14 +1039,14 @@ export default function Home() {
                   </button>
 
                   {showAdvanced ? (
-                    <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                    <div className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
                       <div className="grid gap-2 sm:grid-cols-2">
                         <label className="text-xs text-slate-300">
                           CRF
                           <input
                             value={advancedCrf}
                             onChange={(e) => setAdvancedCrf(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1019,7 +1054,7 @@ export default function Home() {
                           <input
                             value={advancedWidth}
                             onChange={(e) => setAdvancedWidth(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1027,7 +1062,7 @@ export default function Home() {
                           <input
                             value={advancedFps}
                             onChange={(e) => setAdvancedFps(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1035,7 +1070,7 @@ export default function Home() {
                           <input
                             value={advancedQuality}
                             onChange={(e) => setAdvancedQuality(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1043,7 +1078,7 @@ export default function Home() {
                           <input
                             value={advancedLossy}
                             onChange={(e) => setAdvancedLossy(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1051,7 +1086,7 @@ export default function Home() {
                           <input
                             value={advancedColors}
                             onChange={(e) => setAdvancedColors(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                         <label className="text-xs text-slate-300">
@@ -1059,7 +1094,7 @@ export default function Home() {
                           <input
                             value={advancedSegmentMinutes}
                             onChange={(e) => setAdvancedSegmentMinutes(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 text-sm"
+                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                           />
                         </label>
                       </div>
@@ -1069,7 +1104,7 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={mediaLoading}
-                    className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+                    className="h-12 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] hover:brightness-110 disabled:opacity-60"
                   >
                     {mediaLoading ? 'Processando...' : mediaFiles.length > 1 ? 'Criar jobs em lote' : 'Criar job'}
                   </button>
@@ -1099,7 +1134,7 @@ export default function Home() {
               {mediaNotice ? <p className="text-sm text-emerald-400">{mediaNotice}</p> : null}
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+            <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold">Fila de midia</h3>
                 <button
@@ -1119,7 +1154,7 @@ export default function Home() {
               ) : (
                 <div className="space-y-3">
                   {mediaJobs.map((job) => (
-                    <article key={job.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                    <article key={job.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <input
@@ -1150,7 +1185,7 @@ export default function Home() {
                         {job.status === 'completed' ? (
                           <a
                             href={`${apiBase}/api/media/jobs/${job.id}/download`}
-                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+                            className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
                           >
                             Baixar agora
                           </a>
@@ -1172,7 +1207,7 @@ export default function Home() {
         ) : (
           <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             <div className="space-y-4">
-              <form onSubmit={createThumbnailJobs} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-6">
+              <form onSubmit={createThumbnailJobs} className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
                 <h3 className="text-lg font-semibold">Thumbnail Studio</h3>
                 <div className="mt-4 space-y-3">
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -1199,7 +1234,7 @@ export default function Home() {
                         type="file"
                         multiple
                         onChange={(e) => setThumbFiles(Array.from(e.target.files || []))}
-                        className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                        className="block w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 py-3 text-sm"
                         accept="image/*,video/*"
                       />
                       <p className="text-xs text-slate-400">
@@ -1213,14 +1248,14 @@ export default function Home() {
                       value={thumbUrlsText}
                       onChange={(e) => setThumbUrlsText(e.target.value)}
                       placeholder="Cole URLs (uma por linha). Suporta URL direta e link de arquivo do Google Drive."
-                      className="h-32 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      className="h-32 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 py-2 text-sm outline-none focus:border-[#c3c0ff]"
                     />
                   )}
 
                   <select
                     value={thumbPreset}
                     onChange={(e) => setThumbPreset(e.target.value as ThumbnailPreset)}
-                    className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
                   >
                     <option value="16x9">16:9 (1280x720)</option>
                     <option value="1x1">1:1 (1080x1080)</option>
@@ -1230,7 +1265,7 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={thumbLoading}
-                    className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-60"
+                    className="h-12 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] hover:brightness-110 disabled:opacity-60"
                   >
                     {thumbLoading ? 'Gerando...' : 'Gerar thumbnails'}
                   </button>
@@ -1260,7 +1295,7 @@ export default function Home() {
               {thumbNotice ? <p className="text-sm text-emerald-400">{thumbNotice}</p> : null}
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-6">
+            <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold">Fila de thumbnails</h3>
                 <button
@@ -1280,7 +1315,7 @@ export default function Home() {
               ) : (
                 <div className="space-y-3">
                   {thumbJobs.map((job) => (
-                    <article key={job.id} className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+                    <article key={job.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <input
@@ -1311,7 +1346,7 @@ export default function Home() {
                         {job.status === 'completed' ? (
                           <a
                             href={`${apiBase}/api/thumbnails/jobs/${job.id}/download`}
-                            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+                            className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
                           >
                             Baixar agora
                           </a>
@@ -1335,3 +1370,5 @@ export default function Home() {
     </main>
   );
 }
+
+

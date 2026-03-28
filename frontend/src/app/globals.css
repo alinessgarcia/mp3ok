@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #020617;
-  --foreground: #f8fafc;
+  --background: #0b1326;
+  --foreground: #dae2fd;
 }
 
 * {
@@ -14,9 +14,18 @@
 body {
   color: var(--foreground);
   background:
-    radial-gradient(circle at 10% -10%, rgba(14, 165, 233, 0.25), transparent 32%),
-    radial-gradient(circle at 90% 0%, rgba(16, 185, 129, 0.2), transparent 28%),
+    radial-gradient(circle at 12% -6%, rgba(195, 192, 255, 0.19), transparent 34%),
+    radial-gradient(circle at 84% 4%, rgba(157, 240, 255, 0.12), transparent 31%),
+    radial-gradient(circle at 50% 110%, rgba(82, 80, 164, 0.28), transparent 38%),
     var(--background);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: Inter, var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
+}
+
+button {
+  transition: transform 140ms ease, filter 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+button:active {
+  transform: scale(0.985);
 }
