@@ -31,9 +31,11 @@ const limiter = rateLimit({
     return (
       path.startsWith('/media/jobs') ||
       path.startsWith('/thumbnails/jobs') ||
+      path.startsWith('/news') ||
       path.startsWith('/progress') ||
       path.startsWith('/api/media/jobs') ||
       path.startsWith('/api/thumbnails/jobs') ||
+      path.startsWith('/api/news') ||
       path.startsWith('/api/progress')
     );
   },

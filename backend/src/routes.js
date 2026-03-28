@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('node:fs');
 const multer = require('multer');
 const { getInfo, downloadMedia, subscribeProgress } = require('./downloader');
+const { refreshNews, listNews, getNewsStatus } = require('./newsService');
 const { mediaConfig } = require('./mediaConfig');
 const { MediaQueue } = require('./mediaQueue');
 const { OPERATION_SET, PRESET_SET } = require('./mediaProcessor');
@@ -169,6 +170,55 @@ router.get('/download', (req, res, next) => {
     } catch (error) {
         next(error);
     }
+});
+
+// GET /api/health
+router.get('/health', (_req, res) => {
+  res.json({ ok: true, service: 'mp3ok-backend', now: new Date().toISOString() });
+});
+
+// GET /api/news?limit=20&refresh=1
+router.get('/news', async (req, res, next) => {
+  try {
+    const limit = Number(req.query?.limit || 20);
+    const shouldRefresh = String(req.query?.refresh || '') === '1';
+    if (shouldRefresh) {
+      await refreshNews({ force: true });
+    }
+    const items = await listNews(limit);
+    res.json({ items });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/news/refresh
+router.post('/news/refresh', async (req, res, next) => {
+  try {
+    const headerToken = String(req.headers['x-news-token'] || '');
+    const bodyToken = String(req.body?.token || '');
+    const authToken = headerToken || bodyToken;
+    const expectedToken = String(process.env.NEWS_REFRESH_TOKEN || '').trim();
+
+    if (expectedToken && authToken !== expectedToken) {
+      return res.status(401).json({ error: 'Token invalido para refresh de noticias.' });
+    }
+
+    const report = await refreshNews({ force: true });
+    return res.json({ ok: true, report });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/news/health
+router.get('/news/health', async (req, res, next) => {
+  try {
+    const status = await getNewsStatus();
+    res.json({ status });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // GET /api/progress?id={taskId}

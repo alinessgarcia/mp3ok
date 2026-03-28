@@ -75,6 +75,17 @@ type ThumbnailJob = {
   expiresAt: string | null;
 };
 
+type NewsItem = {
+  source_url: string;
+  source_name: string;
+  title: string;
+  summary: string;
+  image_url?: string;
+  published_at?: string;
+  tags?: string;
+  score?: number;
+};
+
 function getApiBase() {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -140,6 +151,9 @@ export default function Home() {
   const [thumbLoading, setThumbLoading] = useState(false);
   const [thumbError, setThumbError] = useState('');
   const [thumbNotice, setThumbNotice] = useState('');
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState('');
 
   const urlSseRef = useRef<Map<string, EventSource>>(new Map());
   const urlTasksRef = useRef<Map<string, UrlTask>>(new Map());
@@ -159,6 +173,33 @@ export default function Home() {
     });
     urlTasksRef.current = map;
   }, [urlTasks]);
+
+  const fetchNews = useCallback(
+    async (forceRefresh = false) => {
+      setNewsLoading(true);
+      setNewsError('');
+      try {
+        const suffix = forceRefresh ? '&refresh=1' : '';
+        const res = await fetch(`${apiBase}/api/news?limit=18${suffix}`, { cache: 'no-store' });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          throw new Error(payload?.error || 'Falha ao carregar noticias');
+        }
+        const data = await res.json();
+        const items = Array.isArray(data?.items) ? data.items : [];
+        setNewsItems(items);
+      } catch (error) {
+        setNewsError(error instanceof Error ? error.message : 'Falha ao carregar noticias');
+      } finally {
+        setNewsLoading(false);
+      }
+    },
+    [apiBase],
+  );
+
+  useEffect(() => {
+    fetchNews(false).catch(() => {});
+  }, [fetchNews]);
 
   const fetchInfo = async () => {
     if (!url) return;
@@ -1374,6 +1415,73 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        <section className="mt-8 rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-extrabold text-[#e2dfff]">Radar Retro BR</h3>
+              <p className="mt-1 text-sm text-[#c5c5d4]">
+                Coleta automatica de noticias sobre musica brasileira antiga, raridades e entrevistas.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchNews(true)}
+              disabled={newsLoading}
+              className="h-10 rounded-full bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] px-4 text-xs font-bold uppercase tracking-[0.12em] text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-50"
+            >
+              {newsLoading ? 'Atualizando...' : 'Atualizar feed'}
+            </button>
+          </div>
+
+          {newsError ? <p className="mb-3 text-sm text-rose-400">{newsError}</p> : null}
+
+          {newsItems.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[#454652]/35 p-4 text-sm text-[#c5c5d4]">
+              Nenhuma noticia encontrada ainda. Clique em &quot;Atualizar feed&quot; para buscar agora.
+            </p>
+          ) : (
+            <div className="grid max-h-[420px] gap-3 overflow-y-auto pr-1">
+              {newsItems.map((item) => (
+                <article key={item.source_url} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
+                  <div className="flex items-start gap-3">
+                    {item.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="h-16 w-24 flex-shrink-0 rounded-lg object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[#8f909e]">
+                        <span className="font-bold text-[#9cf0ff]">{item.source_name || 'Fonte'}</span>
+                        {item.published_at ? (
+                          <span>{new Date(item.published_at).toLocaleDateString('pt-BR')}</span>
+                        ) : null}
+                      </div>
+                      <a
+                        href={item.source_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="line-clamp-2 text-sm font-bold text-[#e2dfff] hover:text-[#bdf4ff]"
+                      >
+                        {item.title}
+                      </a>
+                      {item.summary ? (
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#c5c5d4]">{item.summary}</p>
+                      ) : null}
+                      {item.tags ? (
+                        <p className="mt-2 text-[11px] text-[#8f909e]">Tags: {item.tags}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );

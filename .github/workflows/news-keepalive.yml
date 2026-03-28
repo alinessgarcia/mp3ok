@@ -1,0 +1,28 @@
+name: News Keepalive
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-and-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health
+        run: |
+          curl -fsS "${{ secrets.RENDER_API_BASE }}/api/health"
+
+      - name: Refresh retro news collector
+        run: |
+          if [ -n "${{ secrets.NEWS_REFRESH_TOKEN }}" ]; then
+            curl -fsS -X POST \
+              -H "Content-Type: application/json" \
+              -H "x-news-token: ${{ secrets.NEWS_REFRESH_TOKEN }}" \
+              "${{ secrets.RENDER_API_BASE }}/api/news/refresh"
+          else
+            curl -fsS -X POST \
+              -H "Content-Type: application/json" \
+              "${{ secrets.RENDER_API_BASE }}/api/news/refresh"
+          fi
+

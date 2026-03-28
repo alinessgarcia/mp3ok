@@ -154,3 +154,35 @@ Regras do MVP:
 - Os arquivos são temporários (TTL + remoção manual).
 - Para links privados do Google Drive é necessário acesso público no MVP atual.
 - Os contratos existentes de `/api/info`, `/api/download`, `/api/progress` e `/api/media/jobs*` foram mantidos.
+
+### Coletor de noticias retro (Supabase)
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEWS_TABLE` (default: `music_news`)
+- `NEWS_HEARTBEAT_TABLE` (default: `collector_heartbeat`)
+- `NEWS_HEARTBEAT_KEY` (default: `retro_news`)
+- `NEWS_FEEDS` (lista CSV de feeds RSS)
+- `NEWS_KEYWORDS` (lista CSV de palavras-chave)
+- `NEWS_MAX_ITEMS_PER_FEED` (default: `25`)
+- `NEWS_FETCH_TIMEOUT_MS` (default: `20000`)
+- `NEWS_MIN_REFRESH_MS` (default: `900000`)
+- `NEWS_REFRESH_TOKEN` (opcional, protege o endpoint de refresh)
+
+Schema SQL:
+
+- `scripts/supabase-news-schema.sql`
+
+Endpoints:
+
+- `GET /api/news?limit=18`
+- `POST /api/news/refresh`
+- `GET /api/news/health`
+- `GET /api/health`
+
+Keepalive automatico:
+
+- workflow GitHub: `.github/workflows/news-keepalive.yml`
+- configurar secrets no GitHub:
+  - `RENDER_API_BASE` = `https://mp3ok.onrender.com`
+  - `NEWS_REFRESH_TOKEN` = token escolhido (se usar prote��o)

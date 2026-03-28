@@ -9,11 +9,13 @@
         "dev": "nodemon src/index.js"
     },
     "dependencies": {
+        "@supabase/supabase-js": "^2.100.1",
         "cors": "^2.8.5",
         "express": "^4.19.2",
         "express-rate-limit": "^7.2.0",
         "gifsicle": "^7.0.1",
         "multer": "^2.0.2",
+        "rss-parser": "^3.13.0",
         "sharp": "^0.34.2"
     },
     "devDependencies": {
