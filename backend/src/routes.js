@@ -199,6 +199,15 @@ router.post('/news/refresh', async (req, res, next) => {
     const bodyToken = String(req.body?.token || '');
     const authToken = headerToken || bodyToken;
     const expectedToken = String(process.env.NEWS_REFRESH_TOKEN || '').trim();
+    const allowUnauthenticatedRefresh = String(process.env.ALLOW_UNAUTH_NEWS_REFRESH || '').trim() === 'true';
+    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+
+    if (isProd && !expectedToken && !allowUnauthenticatedRefresh) {
+      return res.status(503).json({
+        error:
+          'NEWS_REFRESH_TOKEN não configurado no backend em produção. Defina o token ou use ALLOW_UNAUTH_NEWS_REFRESH=true.',
+      });
+    }
 
     if (expectedToken && authToken !== expectedToken) {
       return res.status(401).json({ error: 'Token invalido para refresh de noticias.' });

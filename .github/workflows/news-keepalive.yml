@@ -9,20 +9,97 @@ jobs:
   ping-and-refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping backend health
+      - name: Ping backend (health/news fallback)
+        env:
+          RENDER_API_BASE: ${{ secrets.RENDER_API_BASE }}
         run: |
-          curl -fsS "${{ secrets.RENDER_API_BASE }}/api/health"
+          set -euo pipefail
+          BASE="${RENDER_API_BASE%/}"
 
-      - name: Refresh retro news collector
-        run: |
-          if [ -n "${{ secrets.NEWS_REFRESH_TOKEN }}" ]; then
-            curl -fsS -X POST \
-              -H "Content-Type: application/json" \
-              -H "x-news-token: ${{ secrets.NEWS_REFRESH_TOKEN }}" \
-              "${{ secrets.RENDER_API_BASE }}/api/news/refresh"
-          else
-            curl -fsS -X POST \
-              -H "Content-Type: application/json" \
-              "${{ secrets.RENDER_API_BASE }}/api/news/refresh"
+          if [ -z "$BASE" ]; then
+            echo "RENDER_API_BASE secret não configurado."
+            exit 1
           fi
 
+          check_path() {
+            local path="$1"
+            local status
+            status="$(curl -sS -o /tmp/keepalive-health.out -w "%{http_code}" "$BASE$path" || echo "000")"
+            echo "GET $path -> HTTP $status"
+
+            if [ "$status" -ge 100 ] && [ "$status" -lt 500 ]; then
+              return 0
+            fi
+
+            return 2
+          }
+
+          if check_path "/api/health"; then
+            exit 0
+          fi
+
+          if check_path "/api/news/health"; then
+            exit 0
+          fi
+
+          if check_path "/api/news?limit=1"; then
+            exit 0
+          fi
+
+          echo "Backend indisponível ou URL incorreta em RENDER_API_BASE."
+          cat /tmp/keepalive-health.out || true
+          exit 1
+
+      - name: Refresh retro news collector
+        env:
+          RENDER_API_BASE: ${{ secrets.RENDER_API_BASE }}
+          NEWS_REFRESH_TOKEN: ${{ secrets.NEWS_REFRESH_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          BASE="${RENDER_API_BASE%/}"
+
+          if [ -z "$BASE" ]; then
+            echo "RENDER_API_BASE secret não configurado."
+            exit 1
+          fi
+
+          CURL_ARGS=(-sS -o /tmp/keepalive-refresh.out -w "%{http_code}" -X POST -H "Content-Type: application/json")
+
+          if [ -n "${NEWS_REFRESH_TOKEN:-}" ]; then
+            CURL_ARGS+=(-H "x-news-token: ${NEWS_REFRESH_TOKEN}")
+          fi
+
+          STATUS="$(curl "${CURL_ARGS[@]}" "$BASE/api/news/refresh" || echo "000")"
+          echo "POST /api/news/refresh -> HTTP $STATUS"
+
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            cat /tmp/keepalive-refresh.out || true
+            exit 0
+          fi
+
+          if [ "$STATUS" = "404" ]; then
+            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ]; then
+              echo "/api/news/refresh não encontrado no backend atual."
+              cat /tmp/keepalive-refresh.out || true
+              exit 1
+            fi
+            echo "::warning::/api/news/refresh não encontrado. Keepalive de refresh foi ignorado (deploy backend desatualizado)."
+            exit 0
+          fi
+
+          if [ "$STATUS" = "401" ]; then
+            echo "NEWS_REFRESH_TOKEN inválido ou ausente no backend."
+            cat /tmp/keepalive-refresh.out || true
+            exit 1
+          fi
+
+          if [ "$STATUS" = "429" ]; then
+            echo "Rate limit atingido no backend."
+            cat /tmp/keepalive-refresh.out || true
+            exit 1
+          fi
+
+          echo "Falha ao executar refresh de notícias (HTTP $STATUS)."
+          cat /tmp/keepalive-refresh.out || true
+          exit 1
