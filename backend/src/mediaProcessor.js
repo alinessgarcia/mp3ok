@@ -3,11 +3,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const sharp = require('sharp');
 const { mediaConfig } = require('./mediaConfig');
-const gifsicleModule = require('gifsicle');
-const gifsicleBinary =
-  typeof gifsicleModule === 'string'
-    ? gifsicleModule
-    : gifsicleModule?.default || gifsicleModule?.path;
+const gifsicleBinary = String(process.env.GIFSICLE_BIN || 'gifsicle').trim() || 'gifsicle';
 
 const OPERATION_SET = new Set([
   'optimize-gif',
@@ -114,6 +110,10 @@ function runCommand(command, args, options = {}) {
           reject(new Error('ffprobe nao encontrado no PATH. Instale FFmpeg completo e reinicie o backend.'));
           return;
         }
+        if (command === 'gifsicle') {
+          reject(new Error('gifsicle nao encontrado no PATH. Instale gifsicle e reinicie o backend.'));
+          return;
+        }
         reject(new Error(`${command} nao encontrado no sistema.`));
         return;
       }
@@ -170,10 +170,6 @@ async function fallbackOptimizeGifWithFfmpeg(job, outputPath) {
 }
 
 async function optimizeGif(job, outputPath, progressCb) {
-  if (!gifsicleBinary || typeof gifsicleBinary !== 'string') {
-    throw new Error('gifsicle nao encontrado ou invalido no ambiente.');
-  }
-
   const preset = PRESET_VALUES[job.preset];
   const advanced = parseAdvanced(job.advanced);
   const lossy = pickNumber(advanced.lossy, preset.gifLossy, 0, 400);
@@ -188,8 +184,22 @@ async function optimizeGif(job, outputPath, progressCb) {
   }
   args.push('--careful');
   args.push('-o', outputPath);
+  try {
+    await runCommand(gifsicleBinary, args);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    const missingGifsicle =
+      message.includes('gifsicle nao encontrado') ||
+      message.includes('gifsicle failed') ||
+      message.includes('not found');
 
-  await runCommand(gifsicleBinary, args);
+    if (!missingGifsicle) {
+      throw error;
+    }
+
+    progressCb(70, 'gifsicle indisponivel, aplicando modo seguro (FFmpeg)...');
+    await fallbackOptimizeGifWithFfmpeg(job, outputPath);
+  }
 
   // Protecao contra saidas quebradas (ex.: GIF reduzido para um quadrado preto)
   const [inMeta, outMeta, inStat, outStat] = await Promise.all([

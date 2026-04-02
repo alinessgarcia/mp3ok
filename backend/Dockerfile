@@ -6,6 +6,7 @@ RUN apk add --no-cache \
     npm \
     python3 \
     ffmpeg \
+    gifsicle \
     curl \
     ca-certificates \
     build-base \
