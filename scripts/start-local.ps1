@@ -4,6 +4,32 @@ $rootDir = Split-Path -Parent $PSScriptRoot
 $frontendPort = 3000
 $backendPort = 4000
 
+function Load-RootEnv {
+  param([string]$RootDir)
+
+  $envFile = Join-Path $RootDir '.env.local'
+  if (-not (Test-Path $envFile)) {
+    return ''
+  }
+
+  $pairs = @()
+  foreach ($line in Get-Content $envFile) {
+    if ([string]::IsNullOrWhiteSpace($line)) { continue }
+    if ($line.TrimStart().StartsWith('#')) { continue }
+
+    if ($line -match '^\s*([^=\s]+)\s*=\s*(.*)\s*$') {
+      $key = $matches[1].Trim()
+      $value = $matches[2]
+      if ([string]::IsNullOrWhiteSpace($key)) { continue }
+      if ([string]::IsNullOrWhiteSpace($value)) { continue }
+      $safeValue = $value.Replace("'", "''")
+      $pairs += "`$env:$key = '$safeValue'"
+    }
+  }
+
+  return [string]::Join('; ', $pairs)
+}
+
 function Test-TcpPort {
   param(
     [string]$HostName = '127.0.0.1',
@@ -61,10 +87,22 @@ function Start-ServiceWindow {
   param(
     [string]$Name,
     [string]$WorkingDir,
-    [string]$Command
+    [string]$Command,
+    [string]$EnvScript
   )
 
-  $launch = "$host.UI.RawUI.WindowTitle = '$Name'; Set-Location '$WorkingDir'; $Command"
+  $launchParts = @(
+    "$host.UI.RawUI.WindowTitle = '$Name'"
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($EnvScript)) {
+    $launchParts += $EnvScript
+  }
+
+  $launchParts += "Set-Location '$WorkingDir'"
+  $launchParts += $Command
+  $launch = [string]::Join('; ', $launchParts)
+
   Start-Process powershell -ArgumentList @(
     '-NoExit',
     '-ExecutionPolicy', 'Bypass',
@@ -72,21 +110,23 @@ function Start-ServiceWindow {
   ) | Out-Null
 }
 
+$envScript = Load-RootEnv -RootDir $rootDir
+
 Ensure-NodeModules -TargetDir $rootDir
 Ensure-NodeModules -TargetDir (Join-Path $rootDir 'backend')
 Ensure-NodeModules -TargetDir (Join-Path $rootDir 'frontend')
 
-$backendUp = (Test-TcpPort -Port $backendPort) -and (Test-Http -Url 'http://localhost:4000/api/media/jobs')
+$backendUp = (Test-TcpPort -Port $backendPort) -and (Test-Http -Url 'http://localhost:4000/api/health')
 $frontendUp = (Test-TcpPort -Port $frontendPort) -and (Test-Http -Url 'http://localhost:3000')
 
 if (-not $backendUp) {
   Write-Host 'Iniciando backend em nova janela...'
-  Start-ServiceWindow -Name 'OpenDownloader Backend' -WorkingDir (Join-Path $rootDir 'backend') -Command 'npm.cmd run dev'
+  Start-ServiceWindow -Name 'OpenDownloader Backend' -WorkingDir (Join-Path $rootDir 'backend') -Command 'npm.cmd run dev' -EnvScript $envScript
 }
 
 if (-not $frontendUp) {
   Write-Host 'Iniciando frontend em nova janela...'
-  Start-ServiceWindow -Name 'OpenDownloader Frontend' -WorkingDir (Join-Path $rootDir 'frontend') -Command 'npm.cmd run dev'
+  Start-ServiceWindow -Name 'OpenDownloader Frontend' -WorkingDir (Join-Path $rootDir 'frontend') -Command 'npm.cmd run dev' -EnvScript $envScript
 }
 
 if ($backendUp -and $frontendUp) {
@@ -95,7 +135,7 @@ if ($backendUp -and $frontendUp) {
 
 Write-Host 'Aguardando backend/frontend ficarem prontos...'
 for ($i = 0; $i -lt 90; $i++) {
-  $backendReady = (Test-TcpPort -Port $backendPort) -and (Test-Http -Url 'http://localhost:4000/api/media/jobs')
+  $backendReady = (Test-TcpPort -Port $backendPort) -and (Test-Http -Url 'http://localhost:4000/api/health')
   $frontendReady = (Test-TcpPort -Port $frontendPort) -and (Test-Http -Url 'http://localhost:3000')
   if ($backendReady -and $frontendReady) {
     Start-Process 'http://localhost:3000'

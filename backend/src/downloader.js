@@ -133,11 +133,15 @@ const getInfo = (url) => {
         let errorData = '';
         let timedOut = false;
         const infoTimeoutMs = Math.max(15_000, Number(process.env.YTDLP_INFO_TIMEOUT_MS || 180_000));
+        const infoMaxEntries = Math.max(1, Number(process.env.YTDLP_INFO_MAX_ENTRIES || 300));
 
         const ytdlp = spawn('yt-dlp', [
             ...getCommonYtdlpArgs(),
-            '--dump-json',
+            '--dump-single-json',
+            '--flat-playlist',
             '--yes-playlist',
+            '--playlist-end',
+            String(infoMaxEntries),
             url
         ]);
 
@@ -170,30 +174,34 @@ const getInfo = (url) => {
                 return reject(new Error(`yt-dlp failed: ${errorData}`));
             }
             try {
-                const lines = outputData
-                    .split(/\r?\n/)
-                    .map((line) => line.trim())
-                    .filter(Boolean);
-
-                if (lines.length === 0) {
+                const raw = outputData.trim();
+                if (!raw) {
                     throw new Error('empty');
                 }
 
-                const parsedItems = lines.map((line) => JSON.parse(line));
-                const first = parsedItems[0] || {};
-                const entries = parsedItems.map((item, index) => ({
+                const parsed = JSON.parse(raw);
+                const parsedEntries = Array.isArray(parsed?.entries) && parsed.entries.length > 0
+                    ? parsed.entries
+                    : [parsed];
+                const first = parsedEntries[0] || parsed || {};
+                const playlistCountRaw = Number(parsed?.playlist_count || parsed?.n_entries || parsedEntries.length);
+                const playlistCount = Number.isFinite(playlistCountRaw) && playlistCountRaw > 0
+                    ? Math.round(playlistCountRaw)
+                    : parsedEntries.length;
+
+                const entries = parsedEntries.map((item, index) => ({
                     id: item?.id || String(index + 1),
                     title: item?.title || `Item ${index + 1}`,
-                    thumbnail: item?.thumbnail || '',
-                    duration: toNumericDuration(item?.duration),
+                    thumbnail: item?.thumbnail || parsed?.thumbnail || '',
+                    duration: toNumericDuration(item?.duration || parsed?.duration),
                     url: resolveEntryUrl(item, url)
                 }));
 
-                const isPlaylist = entries.length > 1;
+                const isPlaylist = parsed?._type === 'playlist' || playlistCount > 1 || entries.length > 1;
                 const totalDuration = entries.reduce((sum, entry) => sum + toNumericDuration(entry.duration), 0);
 
-                // Extract useful formats to abstract complexity from frontend (single media only)
-                const formats = Array.isArray(first.formats) ? first.formats : [];
+                // Formats may be empty in flat-playlist mode.
+                const formats = Array.isArray(parsed?.formats) ? parsed.formats : (Array.isArray(first?.formats) ? first.formats : []);
                 const videoFormats = formats
                     .filter((f) => f.vcodec !== 'none' || f.acodec !== 'none')
                     .map((f) => ({
@@ -207,12 +215,12 @@ const getInfo = (url) => {
 
                 resolve({
                     title: isPlaylist
-                        ? (first.playlist_title || first.playlist || `Playlist (${entries.length} itens)`)
-                        : (first.title || 'Midia'),
-                    thumbnail: first.thumbnail,
+                        ? (parsed?.title || parsed?.playlist_title || parsed?.playlist || first.playlist_title || first.playlist || `Playlist (${playlistCount} itens)`)
+                        : (first.title || parsed?.title || 'Midia'),
+                    thumbnail: first.thumbnail || parsed?.thumbnail,
                     duration: isPlaylist ? totalDuration : toNumericDuration(first.duration),
                     isPlaylist,
-                    entryCount: entries.length,
+                    entryCount: playlistCount,
                     entries,
                     formats: videoFormats
                 });
