@@ -135,7 +135,10 @@ function formatBytes(bytes: number | null) {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
-const URL_INFO_TIMEOUT_MS = 30_000;
+const URL_INFO_TIMEOUT_MS = Math.max(
+  30_000,
+  Number(process.env.NEXT_PUBLIC_URL_INFO_TIMEOUT_MS || 180_000),
+);
 const URL_TASK_TIMEOUT_MS = 12 * 60 * 1000;
 
 export default function Home() {
@@ -372,7 +375,8 @@ export default function Home() {
       });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        setUrlError('Busca cancelada ou tempo de resposta excedido.');
+        const seconds = Math.round(URL_INFO_TIMEOUT_MS / 1000);
+        setUrlError(`Busca cancelada ou tempo de resposta excedido (${seconds}s).`);
       } else {
         setUrlError(error instanceof Error ? error.message : 'Failed to fetch video info');
       }

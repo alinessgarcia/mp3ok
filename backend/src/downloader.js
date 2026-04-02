@@ -131,6 +131,8 @@ const getInfo = (url) => {
     return new Promise((resolve, reject) => {
         let outputData = '';
         let errorData = '';
+        let timedOut = false;
+        const infoTimeoutMs = Math.max(15_000, Number(process.env.YTDLP_INFO_TIMEOUT_MS || 180_000));
 
         const ytdlp = spawn('yt-dlp', [
             ...getCommonYtdlpArgs(),
@@ -138,6 +140,15 @@ const getInfo = (url) => {
             '--yes-playlist',
             url
         ]);
+
+        const timeout = setTimeout(() => {
+            timedOut = true;
+            try {
+                ytdlp.kill('SIGKILL');
+            } catch {
+                // ignore kill errors
+            }
+        }, infoTimeoutMs);
 
         ytdlp.stdout.on('data', (data) => {
             outputData += data.toString();
@@ -148,6 +159,13 @@ const getInfo = (url) => {
         });
 
         ytdlp.on('close', (code) => {
+            clearTimeout(timeout);
+
+            if (timedOut) {
+                const seconds = Math.round(infoTimeoutMs / 1000);
+                return reject(new Error(`yt-dlp info timeout apos ${seconds}s. Tente novamente.`));
+            }
+
             if (code !== 0) {
                 return reject(new Error(`yt-dlp failed: ${errorData}`));
             }
