@@ -11,7 +11,8 @@ type MediaOperation =
   | 'mp4-to-gif'
   | 'gif-to-mp4'
   | 'optimize-mp4'
-  | 'mp4-to-mp3-segmented';
+  | 'mp4-to-mp3-segmented'
+  | 'ogg-to-mp3';
 type Preset = 'light' | 'balanced' | 'aggressive';
 type ThumbnailPreset = '16x9' | '1x1' | '9x16';
 
@@ -1046,7 +1047,7 @@ export default function Home() {
                     multiple
                     onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
                     className="block w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 py-3 text-sm"
-                    accept="video/*,image/gif,image/png,image/jpeg"
+                    accept="video/*,audio/*,image/gif,image/png,image/jpeg"
                   />
                   <p className="text-xs text-slate-400">
                     {mediaFiles.length > 0
@@ -1068,6 +1069,7 @@ export default function Home() {
                     <option value="gif-to-mp4">Converter GIF para MP4</option>
                     <option value="optimize-mp4">Otimizar MP4</option>
                     <option value="mp4-to-mp3-segmented">Converter MP4 para MP3 (dividido)</option>
+                    <option value="ogg-to-mp3">Converter audio WhatsApp (OGG) para MP3</option>
                   </select>
                   <select
                     value={preset}

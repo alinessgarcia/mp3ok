@@ -17,6 +17,7 @@ const OPERATION_SET = new Set([
   'gif-to-mp4',
   'optimize-mp4',
   'mp4-to-mp3-segmented',
+  'ogg-to-mp3',
 ]);
 
 const PRESET_SET = new Set(['light', 'balanced', 'aggressive']);
@@ -326,6 +327,25 @@ async function optimizeMp4(job, outputPath, progressCb) {
   progressCb(95, 'Finalizando MP4...');
 }
 
+async function convertOggToMp3(job, outputPath, progressCb) {
+  const advanced = parseAdvanced(job.advanced);
+  const audioBitrate = String(advanced.audioBitrate || '192k');
+
+  progressCb(20, 'Convertendo OGG para MP3...');
+  await runCommand('ffmpeg', [
+    '-y',
+    '-i',
+    job.inputPath,
+    '-vn',
+    '-c:a',
+    'libmp3lame',
+    '-b:a',
+    audioBitrate,
+    outputPath,
+  ]);
+  progressCb(95, 'Finalizando MP3...');
+}
+
 async function createZipArchive(sourceDir, zipPath) {
   try {
     await runCommand('tar', ['-a', '-c', '-f', zipPath, '-C', sourceDir, '.']);
@@ -437,6 +457,7 @@ async function processMediaJob(job, outputDir, progressCb) {
     if (job.operation === 'optimize-gif' || job.operation === 'mp4-to-gif') ext = 'gif';
     if (job.operation === 'optimize-png') ext = 'png';
     if (job.operation === 'optimize-jpeg') ext = 'jpg';
+    if (job.operation === 'ogg-to-mp3') ext = 'mp3';
     if (job.operation === 'gif-to-mp4' || job.operation === 'optimize-mp4') ext = 'mp4';
     outputName = buildOutputName(job.inputName, ext);
     outputPath = path.join(outputDir, `${job.id}-${outputName}`);
@@ -460,6 +481,8 @@ async function processMediaJob(job, outputDir, progressCb) {
     const segmented = await convertMp4ToMp3Segmented(job, outputDir, progressCb);
     outputName = segmented.outputName;
     outputPath = segmented.outputPath;
+  } else if (job.operation === 'ogg-to-mp3') {
+    await convertOggToMp3(job, outputPath, progressCb);
   }
 
   progressCb(100, 'Concluido');
