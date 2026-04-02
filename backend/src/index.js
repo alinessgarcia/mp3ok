@@ -1,9 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const path = require('node:path');
+const dotenv = require('dotenv');
 const routes = require('./routes');
 const { mediaConfig } = require('./mediaConfig');
 const { thumbnailConfig } = require('./thumbnailConfig');
+const { authenticateApiRequest } = require('./auth');
+
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,7 +52,7 @@ if (enableRateLimit) {
   app.use('/api', limiter);
 }
 
-app.use('/api', routes);
+app.use('/api', authenticateApiRequest, routes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack || err);

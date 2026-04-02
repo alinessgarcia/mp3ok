@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createClient, type Session } from '@supabase/supabase-js';
 
 type DownloadStatus = 'downloading' | 'completed' | 'error';
 type MediaStatus = 'queued' | 'processing' | 'completed' | 'failed';
@@ -97,6 +98,30 @@ function getApiBase() {
   return 'http://localhost:4000';
 }
 
+function getSupabaseConfig() {
+  const url = String(process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
+  const anonKey = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+  if (!url || !anonKey) {
+    return null;
+  }
+  return { url, anonKey };
+}
+
+function buildAuthorizedUrl(rawUrl: string, accessToken: string) {
+  if (!accessToken) {
+    return rawUrl;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    parsed.searchParams.set('access_token', accessToken);
+    return parsed.toString();
+  } catch {
+    const sep = rawUrl.includes('?') ? '&' : '?';
+    return `${rawUrl}${sep}access_token=${encodeURIComponent(accessToken)}`;
+  }
+}
+
 function formatBytes(bytes: number | null) {
   if (!bytes && bytes !== 0) return '-';
   if (bytes < 1024) return `${bytes} B`;
@@ -115,8 +140,21 @@ const URL_TASK_TIMEOUT_MS = 12 * 60 * 1000;
 
 export default function Home() {
   const apiBase = useMemo(() => getApiBase(), []);
+  const supabaseConfig = useMemo(() => getSupabaseConfig(), []);
+  const supabase = useMemo(() => {
+    if (!supabaseConfig) {
+      return null;
+    }
+    return createClient(supabaseConfig.url, supabaseConfig.anonKey);
+  }, [supabaseConfig]);
 
   const [activeTab, setActiveTab] = useState<'url' | 'media' | 'thumb'>('url');
+  const [authReady, setAuthReady] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   const [url, setUrl] = useState('');
   const [loadingInfo, setLoadingInfo] = useState(false);
@@ -172,6 +210,7 @@ export default function Home() {
   const infoAbortRef = useRef<AbortController | null>(null);
   const urlWatcherRef = useRef<Map<string, number>>(new Map());
   const currentUrlTaskIdRef = useRef<string | null>(null);
+  const accessToken = session?.access_token || '';
 
   useEffect(() => {
     const map = new Map<string, UrlTask>();
@@ -181,13 +220,91 @@ export default function Home() {
     urlTasksRef.current = map;
   }, [urlTasks]);
 
+  useEffect(() => {
+    if (!supabase) {
+      setAuthReady(true);
+      return undefined;
+    }
+
+    let active = true;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setSession(data.session || null);
+        setAuthReady(true);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSession(null);
+        setAuthReady(true);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+      setAuthError('');
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const authFetch = useCallback(
+    (input: RequestInfo | URL, init: RequestInit = {}) => {
+      const headers = new Headers(init.headers || {});
+      if (accessToken) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      return fetch(input, {
+        ...init,
+        headers,
+      });
+    },
+    [accessToken],
+  );
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase) {
+      setAuthError('Supabase nao configurado no frontend.');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail.trim(),
+      password: loginPassword,
+    });
+    if (error) {
+      setAuthError(error.message || 'Falha ao fazer login.');
+    }
+    setAuthLoading(false);
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    setAuthLoading(true);
+    setAuthError('');
+    await supabase.auth.signOut();
+    setAuthLoading(false);
+  };
+
   const fetchNews = useCallback(
     async (forceRefresh = false) => {
+      if (!accessToken) {
+        return;
+      }
       setNewsLoading(true);
       setNewsError('');
       try {
         const suffix = forceRefresh ? '&refresh=1' : '';
-        const res = await fetch(`${apiBase}/api/news?limit=18${suffix}`, { cache: 'no-store' });
+        const res = await authFetch(`${apiBase}/api/news?limit=18${suffix}`, { cache: 'no-store' });
         if (!res.ok) {
           const payload = await res.json().catch(() => null);
           throw new Error(payload?.error || 'Falha ao carregar noticias');
@@ -201,15 +318,23 @@ export default function Home() {
         setNewsLoading(false);
       }
     },
-    [apiBase],
+    [accessToken, apiBase, authFetch],
   );
 
   useEffect(() => {
+    if (!accessToken) {
+      setNewsItems([]);
+      return;
+    }
     fetchNews(false).catch(() => {});
-  }, [fetchNews]);
+  }, [accessToken, fetchNews]);
 
   const fetchInfo = async () => {
     if (!url) return;
+    if (!accessToken) {
+      setUrlError('Sessao invalida. Faca login novamente.');
+      return;
+    }
     if (infoAbortRef.current) {
       infoAbortRef.current.abort();
       infoAbortRef.current = null;
@@ -223,7 +348,7 @@ export default function Home() {
     const timeout = window.setTimeout(() => controller.abort(), URL_INFO_TIMEOUT_MS);
 
     try {
-      const res = await fetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`, {
+      const res = await authFetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`, {
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -301,7 +426,7 @@ export default function Home() {
       },
     ]);
 
-    const sse = new EventSource(`${apiBase}/api/progress?id=${taskId}`);
+    const sse = new EventSource(buildAuthorizedUrl(`${apiBase}/api/progress?id=${taskId}`, accessToken));
     urlSseRef.current.set(taskId, sse);
 
     sse.onmessage = (event) => {
@@ -347,7 +472,10 @@ export default function Home() {
       urlSseRef.current.delete(taskId);
     };
 
-    const downloadUrl = `${apiBase}/api/download?url=${encodeURIComponent(targetUrl)}&format=${format}&quality=${quality}&id=${taskId}&title=${encodeURIComponent(entry.title || 'download')}`;
+    const downloadUrl = buildAuthorizedUrl(
+      `${apiBase}/api/download?url=${encodeURIComponent(targetUrl)}&format=${format}&quality=${quality}&id=${taskId}&title=${encodeURIComponent(entry.title || 'download')}`,
+      accessToken,
+    );
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.style.display = 'none';
@@ -357,7 +485,7 @@ export default function Home() {
 
     return taskId;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiBase, format, quality, url]);
+  }, [accessToken, apiBase, format, quality, url]);
 
   const startDownloadQueue = useCallback(() => {
     if (urlDownloadBusyRef.current) return;
@@ -480,7 +608,10 @@ export default function Home() {
   };
 
   const fetchMediaJobs = useCallback(async () => {
-    const res = await fetch(`${apiBase}/api/media/jobs`, { cache: 'no-store' });
+    if (!accessToken) {
+      return;
+    }
+    const res = await authFetch(`${apiBase}/api/media/jobs`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error('Failed to load media jobs');
     }
@@ -503,10 +634,13 @@ export default function Home() {
       });
       return next;
     });
-  }, [apiBase]);
+  }, [accessToken, apiBase, authFetch]);
 
   const fetchThumbJobs = useCallback(async () => {
-    const res = await fetch(`${apiBase}/api/thumbnails/jobs`, { cache: 'no-store' });
+    if (!accessToken) {
+      return;
+    }
+    const res = await authFetch(`${apiBase}/api/thumbnails/jobs`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error('Failed to load thumbnail jobs');
     }
@@ -529,7 +663,7 @@ export default function Home() {
       });
       return next;
     });
-  }, [apiBase]);
+  }, [accessToken, apiBase, authFetch]);
 
   useEffect(() => {
     if (activeTab !== 'media') {
@@ -556,6 +690,9 @@ export default function Home() {
   }, [activeTab, fetchThumbJobs]);
 
   useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
     const activeIds = new Set(
       mediaJobs
         .filter((job) => job.status === 'queued' || job.status === 'processing')
@@ -566,7 +703,7 @@ export default function Home() {
       if (mediaSseRef.current.has(jobId)) {
         return;
       }
-      const sse = new EventSource(`${apiBase}/api/media/jobs/${jobId}/progress`);
+      const sse = new EventSource(buildAuthorizedUrl(`${apiBase}/api/media/jobs/${jobId}/progress`, accessToken));
       mediaSseRef.current.set(jobId, sse);
 
       sse.onmessage = (event) => {
@@ -586,9 +723,12 @@ export default function Home() {
         mediaSseRef.current.delete(jobId);
       }
     });
-  }, [apiBase, mediaJobs]);
+  }, [accessToken, apiBase, mediaJobs]);
 
   useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
     const activeIds = new Set(
       thumbJobs
         .filter((job) => job.status === 'queued' || job.status === 'processing')
@@ -599,7 +739,7 @@ export default function Home() {
       if (thumbSseRef.current.has(jobId)) {
         return;
       }
-      const sse = new EventSource(`${apiBase}/api/thumbnails/jobs/${jobId}/progress`);
+      const sse = new EventSource(buildAuthorizedUrl(`${apiBase}/api/thumbnails/jobs/${jobId}/progress`, accessToken));
       thumbSseRef.current.set(jobId, sse);
 
       sse.onmessage = (event) => {
@@ -619,7 +759,7 @@ export default function Home() {
         thumbSseRef.current.delete(jobId);
       }
     });
-  }, [apiBase, thumbJobs]);
+  }, [accessToken, apiBase, thumbJobs]);
 
   useEffect(() => {
     const urlSources = urlSseRef.current;
@@ -648,7 +788,7 @@ export default function Home() {
       autoDownloadedMediaRef.current.add(job.id);
       setTimeout(() => {
         const a = document.createElement('a');
-        a.href = `${apiBase}/api/media/jobs/${job.id}/download`;
+        a.href = buildAuthorizedUrl(`${apiBase}/api/media/jobs/${job.id}/download`, accessToken);
         a.download = job.outputName || 'media-output';
         a.style.display = 'none';
         document.body.appendChild(a);
@@ -656,7 +796,7 @@ export default function Home() {
         document.body.removeChild(a);
       }, index * 300);
     });
-  }, [apiBase, mediaJobs]);
+  }, [accessToken, apiBase, mediaJobs]);
 
   useEffect(() => {
     const toDownload = thumbJobs.filter((job) => job.status === 'completed' && !autoDownloadedThumbRef.current.has(job.id));
@@ -664,7 +804,7 @@ export default function Home() {
       autoDownloadedThumbRef.current.add(job.id);
       setTimeout(() => {
         const a = document.createElement('a');
-        a.href = `${apiBase}/api/thumbnails/jobs/${job.id}/download`;
+        a.href = buildAuthorizedUrl(`${apiBase}/api/thumbnails/jobs/${job.id}/download`, accessToken);
         a.download = job.outputName || 'thumbnail.jpg';
         a.style.display = 'none';
         document.body.appendChild(a);
@@ -672,7 +812,7 @@ export default function Home() {
         document.body.removeChild(a);
       }, index * 300);
     });
-  }, [apiBase, thumbJobs]);
+  }, [accessToken, apiBase, thumbJobs]);
 
   const buildAdvancedPayload = () => {
     if (!showAdvanced) {
@@ -725,7 +865,7 @@ export default function Home() {
         body.set('advanced', advanced);
       }
 
-      const res = await fetch(`${apiBase}/api/media/jobs`, {
+      const res = await authFetch(`${apiBase}/api/media/jobs`, {
         method: 'POST',
         body,
       });
@@ -771,7 +911,7 @@ export default function Home() {
 
   const removeMediaByIds = async (ids: string[]) => {
     if (!ids.length) return;
-    const res = await fetch(`${apiBase}/api/media/jobs/delete`, {
+      const res = await authFetch(`${apiBase}/api/media/jobs/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -784,7 +924,7 @@ export default function Home() {
 
   const removeSingleMedia = async (id: string) => {
     try {
-      await fetch(`${apiBase}/api/media/jobs/${id}`, { method: 'DELETE' });
+      await authFetch(`${apiBase}/api/media/jobs/${id}`, { method: 'DELETE' });
       autoDownloadedMediaRef.current.delete(id);
       setSelectedMediaIds((prev) => {
         const next = new Set(prev);
@@ -826,7 +966,7 @@ export default function Home() {
     setMediaError('');
     setMediaNotice('');
     try {
-      const res = await fetch(`${apiBase}/api/media/jobs`, { method: 'DELETE' });
+      const res = await authFetch(`${apiBase}/api/media/jobs`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao limpar fila');
       autoDownloadedMediaRef.current = new Set();
       setSelectedMediaIds(new Set());
@@ -861,7 +1001,7 @@ export default function Home() {
         thumbFiles.forEach((file) => body.append('files', file));
         body.set('operation', 'thumbnail');
         body.set('preset', thumbPreset);
-        res = await fetch(`${apiBase}/api/thumbnails/jobs`, {
+        res = await authFetch(`${apiBase}/api/thumbnails/jobs`, {
           method: 'POST',
           body,
         });
@@ -870,7 +1010,7 @@ export default function Home() {
         if (urls.length === 0) {
           throw new Error('Cole ao menos uma URL para gerar thumbnails.');
         }
-        res = await fetch(`${apiBase}/api/thumbnails/jobs/url`, {
+        res = await authFetch(`${apiBase}/api/thumbnails/jobs/url`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -923,7 +1063,7 @@ export default function Home() {
 
   const removeThumbByIds = async (ids: string[]) => {
     if (!ids.length) return;
-    const res = await fetch(`${apiBase}/api/thumbnails/jobs/delete`, {
+      const res = await authFetch(`${apiBase}/api/thumbnails/jobs/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
@@ -936,7 +1076,7 @@ export default function Home() {
 
   const removeSingleThumb = async (id: string) => {
     try {
-      await fetch(`${apiBase}/api/thumbnails/jobs/${id}`, { method: 'DELETE' });
+      await authFetch(`${apiBase}/api/thumbnails/jobs/${id}`, { method: 'DELETE' });
       autoDownloadedThumbRef.current.delete(id);
       setSelectedThumbIds((prev) => {
         const next = new Set(prev);
@@ -978,7 +1118,7 @@ export default function Home() {
     setThumbError('');
     setThumbNotice('');
     try {
-      const res = await fetch(`${apiBase}/api/thumbnails/jobs`, { method: 'DELETE' });
+      const res = await authFetch(`${apiBase}/api/thumbnails/jobs`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Falha ao limpar fila de thumbnails');
       autoDownloadedThumbRef.current = new Set();
       setSelectedThumbIds(new Set());
@@ -991,6 +1131,80 @@ export default function Home() {
     }
   };
 
+  if (!authReady) {
+    return (
+      <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
+        <div className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center px-6">
+          <div className="w-full rounded-2xl border border-[#454652]/35 bg-[#171f33]/85 p-6 text-center">
+            <p className="text-sm text-[#c5c5d4]">Validando sessao...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!supabase) {
+    return (
+      <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
+        <div className="mx-auto flex min-h-screen w-full max-w-xl items-center justify-center px-6">
+          <div className="w-full rounded-2xl border border-rose-400/40 bg-[#171f33]/85 p-6">
+            <h1 className="text-xl font-bold text-[#e2dfff]">Configurar Supabase no frontend</h1>
+            <p className="mt-3 text-sm text-[#c5c5d4]">
+              Defina <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> em
+              <code> frontend/.env.local</code> (ou nas variaveis do Netlify) e recarregue a pagina.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
+        <div className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center px-6">
+          <form
+            onSubmit={handleLogin}
+            className="w-full rounded-2xl border border-[#454652]/35 bg-[#171f33]/85 p-6 shadow-[0_20px_60px_rgba(6,14,32,0.55)]"
+          >
+            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">OpenDownloader Local</p>
+            <h1 className="mt-2 text-2xl font-black text-[#e2dfff]">Entrar</h1>
+            <p className="mt-2 text-sm text-[#c5c5d4]">Acesso protegido por Supabase Authentication.</p>
+
+            <div className="mt-5 space-y-3">
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Seu e-mail"
+                required
+                className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm outline-none focus:border-[#c3c0ff]"
+              />
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Sua senha"
+                required
+                className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm outline-none focus:border-[#c3c0ff]"
+              />
+            </div>
+
+            {authError ? <p className="mt-3 text-sm text-rose-400">{authError}</p> : null}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="mt-5 h-11 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-60"
+            >
+              {authLoading ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen text-[#dae2fd] selection:bg-[#c3c0ff] selection:text-[#272377]">
       <nav className="fixed top-0 z-50 w-full border-b border-[#454652]/20 bg-[#0b1326]/70 backdrop-blur-2xl">
@@ -999,8 +1213,22 @@ export default function Home() {
             <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">OpenDownloader Local</p>
             <p className="mt-1 text-lg font-extrabold tracking-tight text-[#e2dfff]">Transcoder.ai</p>
           </div>
-          <div className="rounded-full border border-[#454652]/35 bg-[#171f33]/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#bdf4ff]">
-            Digital Alchemist
+          <div className="flex items-center gap-3">
+            <div className="hidden rounded-full border border-[#454652]/35 bg-[#171f33]/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#bdf4ff] sm:block">
+              Digital Alchemist
+            </div>
+            <div className="hidden text-right sm:block">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#8f909e]">Logado</p>
+              <p className="max-w-[220px] truncate text-xs text-[#c5c5d4]">{session.user.email || '-'}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={authLoading}
+              className="h-9 rounded-xl border border-[#454652]/35 bg-[#171f33]/75 px-3 text-xs font-semibold text-[#dae2fd] disabled:opacity-60"
+            >
+              Sair
+            </button>
           </div>
         </div>
       </nav>
@@ -1397,7 +1625,7 @@ export default function Home() {
                       <div className="mt-3 flex flex-wrap gap-2">
                         {job.status === 'completed' ? (
                           <a
-                            href={`${apiBase}/api/media/jobs/${job.id}/download`}
+                            href={buildAuthorizedUrl(`${apiBase}/api/media/jobs/${job.id}/download`, accessToken)}
                             className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
                           >
                             Baixar agora
@@ -1558,7 +1786,7 @@ export default function Home() {
                       <div className="mt-3 flex flex-wrap gap-2">
                         {job.status === 'completed' ? (
                           <a
-                            href={`${apiBase}/api/thumbnails/jobs/${job.id}/download`}
+                            href={buildAuthorizedUrl(`${apiBase}/api/thumbnails/jobs/${job.id}/download`, accessToken)}
                             className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
                           >
                             Baixar agora
