@@ -110,6 +110,9 @@ function formatBytes(bytes: number | null) {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
+const URL_INFO_TIMEOUT_MS = 30_000;
+const URL_TASK_TIMEOUT_MS = 12 * 60 * 1000;
+
 export default function Home() {
   const apiBase = useMemo(() => getApiBase(), []);
 
@@ -166,6 +169,9 @@ export default function Home() {
   const mediaHydratedRef = useRef(false);
   const autoDownloadedThumbRef = useRef<Set<string>>(new Set());
   const thumbHydratedRef = useRef(false);
+  const infoAbortRef = useRef<AbortController | null>(null);
+  const urlWatcherRef = useRef<Map<string, number>>(new Map());
+  const currentUrlTaskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const map = new Map<string, UrlTask>();
@@ -204,11 +210,22 @@ export default function Home() {
 
   const fetchInfo = async () => {
     if (!url) return;
+    if (infoAbortRef.current) {
+      infoAbortRef.current.abort();
+      infoAbortRef.current = null;
+    }
+
     setLoadingInfo(true);
     setUrlError('');
     setVideoInfo(null);
+    const controller = new AbortController();
+    infoAbortRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), URL_INFO_TIMEOUT_MS);
+
     try {
-      const res = await fetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(payload?.error || 'Failed to fetch video info');
@@ -229,11 +246,42 @@ export default function Home() {
         isPlaylist: Boolean(data?.isPlaylist || safeEntries.length > 1),
       });
     } catch (error) {
-      setUrlError(error instanceof Error ? error.message : 'Failed to fetch video info');
+      if (error instanceof Error && error.name === 'AbortError') {
+        setUrlError('Busca cancelada ou tempo de resposta excedido.');
+      } else {
+        setUrlError(error instanceof Error ? error.message : 'Failed to fetch video info');
+      }
     } finally {
+      window.clearTimeout(timeout);
+      if (infoAbortRef.current === controller) {
+        infoAbortRef.current = null;
+      }
       setLoadingInfo(false);
     }
   };
+
+  const cancelInfoSearch = () => {
+    if (infoAbortRef.current) {
+      infoAbortRef.current.abort();
+      infoAbortRef.current = null;
+    }
+    setLoadingInfo(false);
+    setUrlError('Busca cancelada.');
+  };
+
+  const closeUrlTaskChannel = useCallback((taskId: string) => {
+    const source = urlSseRef.current.get(taskId);
+    if (source) {
+      source.close();
+      urlSseRef.current.delete(taskId);
+    }
+
+    const watcher = urlWatcherRef.current.get(taskId);
+    if (watcher != null) {
+      window.clearInterval(watcher);
+      urlWatcherRef.current.delete(taskId);
+    }
+  }, []);
 
   const triggerSingleDownload = useCallback((entry: VideoEntry) => {
     const targetUrl = entry?.url || url;
@@ -326,19 +374,57 @@ export default function Home() {
       return;
     }
 
+    currentUrlTaskIdRef.current = taskId;
+    const startedAt = Date.now();
     const watcher = window.setInterval(() => {
       const task = urlTasksRef.current.get(taskId);
-      if (!task) return;
+      if (!task) {
+        window.clearInterval(watcher);
+        urlWatcherRef.current.delete(taskId);
+        if (currentUrlTaskIdRef.current === taskId) {
+          currentUrlTaskIdRef.current = null;
+          urlDownloadBusyRef.current = false;
+          if (urlDownloadQueueRef.current.length > 0) {
+            window.setTimeout(() => startDownloadQueue(), 150);
+          }
+        }
+        return;
+      }
+
+      if (Date.now() - startedAt > URL_TASK_TIMEOUT_MS) {
+        setUrlTasks((prev) =>
+          prev.map((item) =>
+            item.id === taskId
+              ? { ...item, status: 'error', size: 'Timeout: download demorou demais.' }
+              : item,
+          ),
+        );
+        closeUrlTaskChannel(taskId);
+        if (currentUrlTaskIdRef.current === taskId) {
+          currentUrlTaskIdRef.current = null;
+          urlDownloadBusyRef.current = false;
+          if (urlDownloadQueueRef.current.length > 0) {
+            window.setTimeout(() => startDownloadQueue(), 150);
+          }
+        }
+        return;
+      }
+
       if (task.status === 'completed' || task.status === 'error') {
         window.clearInterval(watcher);
+        urlWatcherRef.current.delete(taskId);
         urlDownloadBusyRef.current = false;
+        if (currentUrlTaskIdRef.current === taskId) {
+          currentUrlTaskIdRef.current = null;
+        }
         if (urlDownloadQueueRef.current.length > 0) {
           window.setTimeout(() => startDownloadQueue(), 150);
         }
       }
     }, 300);
+    urlWatcherRef.current.set(taskId, watcher);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSingleDownload]);
+  }, [closeUrlTaskChannel, triggerSingleDownload]);
 
   const startDownload = () => {
     if (!videoInfo || !url) return;
@@ -356,6 +442,41 @@ export default function Home() {
 
     urlDownloadQueueRef.current = [...urlDownloadQueueRef.current, ...entries];
     startDownloadQueue();
+  };
+
+  const removeSingleUrlTask = (id: string) => {
+    closeUrlTaskChannel(id);
+    setUrlTasks((prev) => prev.filter((task) => task.id !== id));
+
+    if (currentUrlTaskIdRef.current === id) {
+      currentUrlTaskIdRef.current = null;
+      urlDownloadBusyRef.current = false;
+      if (urlDownloadQueueRef.current.length > 0) {
+        window.setTimeout(() => startDownloadQueue(), 150);
+      }
+    }
+  };
+
+  const clearUrlTasks = () => {
+    Array.from(urlSseRef.current.keys()).forEach((id) => {
+      closeUrlTaskChannel(id);
+    });
+    Array.from(urlWatcherRef.current.values()).forEach((watcher) => {
+      window.clearInterval(watcher);
+    });
+    urlWatcherRef.current.clear();
+    urlDownloadQueueRef.current = [];
+    urlDownloadBusyRef.current = false;
+    currentUrlTaskIdRef.current = null;
+    setUrlTasks([]);
+  };
+
+  const removeCompletedUrlTasks = () => {
+    const completedIds = urlTasks
+      .filter((task) => task.status === 'completed' || task.status === 'error')
+      .map((task) => task.id);
+    completedIds.forEach((id) => closeUrlTaskChannel(id));
+    setUrlTasks((prev) => prev.filter((task) => !completedIds.includes(task.id)));
   };
 
   const fetchMediaJobs = useCallback(async () => {
@@ -504,9 +625,13 @@ export default function Home() {
     const urlSources = urlSseRef.current;
     const mediaSources = mediaSseRef.current;
     const thumbSources = thumbSseRef.current;
+    const urlWatchers = urlWatcherRef.current;
     return () => {
       Array.from(urlSources.values()).forEach((source) => {
         source.close();
+      });
+      Array.from(urlWatchers.values()).forEach((watcher) => {
+        window.clearInterval(watcher);
       });
       Array.from(mediaSources.values()).forEach((source) => {
         source.close();
@@ -954,6 +1079,15 @@ export default function Home() {
                 >
                   {loadingInfo ? 'Buscando...' : 'Buscar midia'}
                 </button>
+                {loadingInfo ? (
+                  <button
+                    type="button"
+                    onClick={cancelInfoSearch}
+                    className="h-12 rounded-xl border border-rose-400 bg-slate-900 px-4 text-sm font-semibold text-rose-300"
+                  >
+                    Cancelar
+                  </button>
+                ) : null}
               </div>
               {urlError ? <p className="mt-3 text-sm text-rose-400">{urlError}</p> : null}
             </div>
@@ -1012,7 +1146,26 @@ export default function Home() {
 
             {urlTasks.length ? (
               <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
-                <h3 className="mb-4 text-lg font-semibold">Fila de downloads por URL</h3>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-lg font-semibold">Fila de downloads por URL</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={removeCompletedUrlTasks}
+                      disabled={!urlTasks.some((task) => task.status === 'completed' || task.status === 'error')}
+                      className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                    >
+                      Remover concluidos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearUrlTasks}
+                      className="rounded-lg border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-300"
+                    >
+                      Limpar lista
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {urlTasks.map((task) => (
                     <div key={task.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
@@ -1029,6 +1182,15 @@ export default function Home() {
                         />
                       </div>
                       <p className="mt-2 text-xs text-slate-400">{task.size}</p>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => removeSingleUrlTask(task.id)}
+                          className="rounded-lg border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-300"
+                        >
+                          Remover
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
