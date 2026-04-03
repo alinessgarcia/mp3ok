@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const Parser = require('rss-parser');
 const { createClient } = require('@supabase/supabase-js');
+const { sanitizePublicHttpUrl } = require('./urlSafety');
 
 const parser = new Parser({
   timeout: Number(process.env.NEWS_FETCH_TIMEOUT_MS || 20_000),
@@ -77,7 +78,11 @@ function parseFeeds() {
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean)
-    .map((entry) => ({ name: entry, url: entry }));
+    .map((entry) => {
+      const url = sanitizePublicHttpUrl(entry);
+      return url ? { name: entry, url } : null;
+    })
+    .filter(Boolean);
   return feeds.length ? feeds : DEFAULT_FEEDS;
 }
 
@@ -107,31 +112,28 @@ function cleanSummary(text) {
   return plain.slice(0, 560);
 }
 
-function ensureHttps(url) {
-  const text = String(url || '').trim();
-  if (!text) return '';
-  if (text.startsWith('//')) return `https:${text}`;
-  return text;
+function normalizeExternalUrl(url) {
+  return sanitizePublicHttpUrl(url);
 }
 
 function pickImage(item) {
   if (Array.isArray(item?.enclosure) && item.enclosure[0]?.url) {
-    return ensureHttps(item.enclosure[0].url);
+    return normalizeExternalUrl(item.enclosure[0].url);
   }
   if (item?.enclosure?.url) {
-    return ensureHttps(item.enclosure.url);
+    return normalizeExternalUrl(item.enclosure.url);
   }
   if (item?.itunes?.image) {
-    return ensureHttps(item.itunes.image);
+    return normalizeExternalUrl(item.itunes.image);
   }
   if (item?.image?.url) {
-    return ensureHttps(item.image.url);
+    return normalizeExternalUrl(item.image.url);
   }
   if (item?.thumbnail) {
-    return ensureHttps(item.thumbnail);
+    return normalizeExternalUrl(item.thumbnail);
   }
   if (item?.['media:content']?.$?.url) {
-    return ensureHttps(item['media:content'].$.url);
+    return normalizeExternalUrl(item['media:content'].$.url);
   }
   return '';
 }
@@ -145,7 +147,7 @@ function toIsoDate(input) {
 }
 
 function buildArticle(feedName, item, keywords) {
-  const link = ensureHttps(item?.link || item?.guid || item?.id);
+  const link = normalizeExternalUrl(item?.link || item?.guid || item?.id);
   const title = String(item?.title || '').trim();
   if (!link || !title) {
     return null;

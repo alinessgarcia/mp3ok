@@ -88,6 +88,114 @@ type NewsItem = {
   score?: number;
 };
 
+type PromoSlide = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  meta: string;
+  accent: string;
+  imageUrl: string;
+};
+
+const PROMO_SLIDES: PromoSlide[] = [
+  {
+    eyebrow: 'Restaurante',
+    title: 'Cantina Bela Mesa - buffet executivo e delivery',
+    description: 'Almoco rapido para equipes e janta especial com reservas online.',
+    meta: 'Centro · 11h as 23h',
+    accent: 'from-[#163f85] via-[#1f5db0] to-[#79b6ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/restaurant,food',
+  },
+  {
+    eyebrow: 'Casa de tintas',
+    title: 'Tintas Horizonte - linha premium e industrial',
+    description: 'Catalogo completo de cores, texturas e consultoria para pintura residencial.',
+    meta: 'Entrega em 24h',
+    accent: 'from-[#0f2a56] via-[#214b95] to-[#7ee0ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/paint,wall',
+  },
+  {
+    eyebrow: 'Construcao',
+    title: 'Constrular Materiais - cimento, ferro e acabamento',
+    description: 'Tudo para obra do alicerce ao acabamento com condicoes para profissionais.',
+    meta: 'Atacado e varejo',
+    accent: 'from-[#132f63] via-[#294f9c] to-[#9ce8ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/construction,building',
+  },
+  {
+    eyebrow: 'Automoveis',
+    title: 'Vila Motors - seminovos revisados e financiamento',
+    description: 'Loja especializada em carros urbanos, SUVs e utilitarios com garantia.',
+    meta: 'Test drive diario',
+    accent: 'from-[#1a3f74] via-[#2f5db1] to-[#86c0ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/car,dealership',
+  },
+  {
+    eyebrow: 'Contabilidade',
+    title: 'Fiscal Prime - abertura de empresa e BPO financeiro',
+    description: 'Contabilidade digital para MEI, LTDA e e-commerce com suporte consultivo.',
+    meta: 'Plano mensal flexivel',
+    accent: 'from-[#0f2b5a] via-[#2a5db0] to-[#6fd8ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/accounting,office',
+  },
+  {
+    eyebrow: 'Saude',
+    title: 'Clinica Movimento - fisioterapia e reabilitacao',
+    description: 'Atendimento ortopedico e pos-cirurgico com protocolo personalizado.',
+    meta: 'Equipe especializada',
+    accent: 'from-[#16386b] via-[#2861b7] to-[#78dfff]',
+    imageUrl: 'https://loremflickr.com/1600/900/physiotherapy,clinic',
+  },
+  {
+    eyebrow: 'Academia',
+    title: 'PowerFit Studio - treino funcional e musculacao',
+    description: 'Planos para iniciantes e avancados com avaliacao fisica e personal trainer.',
+    meta: 'Primeira aula gratis',
+    accent: 'from-[#14366b] via-[#2957ac] to-[#8fd1ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/gym,fitness',
+  },
+  {
+    eyebrow: 'Pet shop',
+    title: 'PetLar Premium - banho, tosa e clinica veterinaria',
+    description: 'Cuidados completos para seu pet com atendimento agendado por aplicativo.',
+    meta: 'Plantao aos sabados',
+    accent: 'from-[#153265] via-[#2c56a8] to-[#8bd9ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/pet,dog',
+  },
+  {
+    eyebrow: 'Moveis',
+    title: 'Casa Nova Design - moveis planejados sob medida',
+    description: 'Projetos para cozinhas, quartos e escritorios com equipe propria de montagem.',
+    meta: 'Parcelamento facilitado',
+    accent: 'from-[#13315e] via-[#3154a6] to-[#92cbff]',
+    imageUrl: 'https://loremflickr.com/1600/900/furniture,interior',
+  },
+  {
+    eyebrow: 'Tecnologia',
+    title: 'NuvemPro SaaS - CRM e automacao comercial',
+    description: 'Sistema para vendas e atendimento com dashboards e integracoes em tempo real.',
+    meta: 'Teste gratis por 14 dias',
+    accent: 'from-[#102a58] via-[#2d4f9e] to-[#7dd2ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/software,technology',
+  },
+  {
+    eyebrow: 'Educacao',
+    title: 'Idioma Express - ingles e espanhol para negocios',
+    description: 'Aulas online e presenciais com foco em conversacao e certificacoes.',
+    meta: 'Turmas noturnas',
+    accent: 'from-[#17376a] via-[#3263b8] to-[#9ad8ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/classroom,students',
+  },
+  {
+    eyebrow: 'Direito',
+    title: 'Silva & Rocha - consultoria juridica empresarial',
+    description: 'Suporte em contratos, tributario e recuperacao de credito para empresas.',
+    meta: 'Atendimento nacional',
+    accent: 'from-[#122d60] via-[#2e5aae] to-[#84c9ff]',
+    imageUrl: 'https://loremflickr.com/1600/900/lawyer,office',
+  },
+];
+
 function getApiBase() {
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -135,6 +243,45 @@ function formatBytes(bytes: number | null) {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
+function formatNewsDate(value?: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function createClientTaskId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function guessFilenameFromHeader(contentDisposition: string | null, fallback: string) {
+  const raw = String(contentDisposition || '');
+  const utfMatch = raw.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    try {
+      return decodeURIComponent(utfMatch[1]).replace(/[/\\:*?"<>|]+/g, '_');
+    } catch {
+      // ignore decode errors
+    }
+  }
+  const asciiMatch = raw.match(/filename="([^"]+)"/i);
+  if (asciiMatch?.[1]) {
+    return asciiMatch[1].replace(/[/\\:*?"<>|]+/g, '_');
+  }
+  return fallback;
+}
+
 const URL_INFO_TIMEOUT_MS = Math.max(
   30_000,
   Number(process.env.NEXT_PUBLIC_URL_INFO_TIMEOUT_MS || 180_000),
@@ -165,6 +312,8 @@ export default function Home() {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [format, setFormat] = useState<'video' | 'audio'>('video');
   const [quality, setQuality] = useState('best');
+  const [playlistDownloadMode, setPlaylistDownloadMode] = useState<'all' | 'single'>('all');
+  const [selectedPlaylistItemId, setSelectedPlaylistItemId] = useState('');
   const [urlTasks, setUrlTasks] = useState<UrlTask[]>([]);
 
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
@@ -199,6 +348,8 @@ export default function Home() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError] = useState('');
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [videoInfoSourceUrl, setVideoInfoSourceUrl] = useState('');
 
   const urlSseRef = useRef<Map<string, EventSource>>(new Map());
   const urlTasksRef = useRef<Map<string, UrlTask>>(new Map());
@@ -211,9 +362,22 @@ export default function Home() {
   const autoDownloadedThumbRef = useRef<Set<string>>(new Set());
   const thumbHydratedRef = useRef(false);
   const infoAbortRef = useRef<AbortController | null>(null);
+  const urlSearchRequestRef = useRef(0);
   const urlWatcherRef = useRef<Map<string, number>>(new Map());
   const currentUrlTaskIdRef = useRef<string | null>(null);
   const accessToken = session?.access_token || '';
+  const currentPromo = PROMO_SLIDES[promoIndex % PROMO_SLIDES.length];
+  const promoPreviewSlides = useMemo(() => {
+    const total = PROMO_SLIDES.length;
+    if (!total) return [];
+    const visibleCount = Math.min(3, total);
+    return Array.from({ length: visibleCount }, (_value, offset) => {
+      const index = (promoIndex + offset) % total;
+      return { slide: PROMO_SLIDES[index], index };
+    });
+  }, [promoIndex]);
+  const featuredNews = newsItems[0] as NewsItem;
+  const briefingNews = newsItems.slice(1, 6);
 
   useEffect(() => {
     const map = new Map<string, UrlTask>();
@@ -332,8 +496,73 @@ export default function Home() {
     fetchNews(false).catch(() => {});
   }, [accessToken, fetchNews]);
 
+  useEffect(() => {
+    if (!PROMO_SLIDES.length) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setPromoIndex((current) => (current + 1) % PROMO_SLIDES.length);
+    }, 4200);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const normalizedUrl = url.trim();
+    if (!videoInfoSourceUrl) {
+      if (!normalizedUrl && loadingInfo) {
+        if (infoAbortRef.current) {
+          infoAbortRef.current.abort();
+          infoAbortRef.current = null;
+        }
+        urlSearchRequestRef.current += 1;
+        setLoadingInfo(false);
+        setUrlError('');
+        setVideoInfo(null);
+        setVideoInfoSourceUrl('');
+      }
+      return;
+    }
+
+    if (!normalizedUrl || normalizedUrl === videoInfoSourceUrl) {
+      return;
+    }
+
+    if (infoAbortRef.current) {
+      infoAbortRef.current.abort();
+      infoAbortRef.current = null;
+    }
+    urlSearchRequestRef.current += 1;
+    setLoadingInfo(false);
+    setUrlError('');
+    setVideoInfo(null);
+    setVideoInfoSourceUrl('');
+  }, [loadingInfo, url, videoInfoSourceUrl]);
+
+  useEffect(() => {
+    if (!videoInfo?.isPlaylist) {
+      setSelectedPlaylistItemId('');
+      return;
+    }
+
+    const entries = Array.isArray(videoInfo.entries) ? videoInfo.entries : [];
+    if (entries.length === 0) {
+      setSelectedPlaylistItemId('');
+      return;
+    }
+
+    setSelectedPlaylistItemId((current) => {
+      if (current && entries.some((entry) => entry.id === current)) {
+        return current;
+      }
+      return entries[0].id;
+    });
+  }, [videoInfo]);
+
   const fetchInfo = async () => {
-    if (!url) return;
+    const normalizedUrl = url.trim();
+    if (!normalizedUrl) return;
     if (!accessToken) {
       setUrlError('Sessao invalida. Faca login novamente.');
       return;
@@ -346,12 +575,14 @@ export default function Home() {
     setLoadingInfo(true);
     setUrlError('');
     setVideoInfo(null);
+    const requestId = urlSearchRequestRef.current + 1;
+    urlSearchRequestRef.current = requestId;
     const controller = new AbortController();
     infoAbortRef.current = controller;
     const timeout = window.setTimeout(() => controller.abort(), URL_INFO_TIMEOUT_MS);
 
     try {
-      const res = await authFetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`, {
+      const res = await authFetch(`${apiBase}/api/info?url=${encodeURIComponent(normalizedUrl)}`, {
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -364,16 +595,23 @@ export default function Home() {
         title: data?.title || 'Midia',
         thumbnail: data?.thumbnail,
         duration: Number(data?.duration || 0),
-        url,
+        url: normalizedUrl,
       };
       const safeEntries = Array.isArray(data?.entries) && data.entries.length > 0 ? data.entries : [fallbackEntry];
+      if (urlSearchRequestRef.current !== requestId) {
+        return;
+      }
       setVideoInfo({
         ...data,
         entries: safeEntries,
         entryCount: Number(data?.entryCount || safeEntries.length),
         isPlaylist: Boolean(data?.isPlaylist || safeEntries.length > 1),
       });
+      setVideoInfoSourceUrl(normalizedUrl);
     } catch (error) {
+      if (urlSearchRequestRef.current !== requestId) {
+        return;
+      }
       if (error instanceof Error && error.name === 'AbortError') {
         const seconds = Math.round(URL_INFO_TIMEOUT_MS / 1000);
         setUrlError(`Busca cancelada ou tempo de resposta excedido (${seconds}s).`);
@@ -385,18 +623,30 @@ export default function Home() {
       if (infoAbortRef.current === controller) {
         infoAbortRef.current = null;
       }
-      setLoadingInfo(false);
+      if (urlSearchRequestRef.current === requestId) {
+        setLoadingInfo(false);
+      }
     }
   };
 
-  const cancelInfoSearch = () => {
+  const cancelInfoSearch = useCallback(() => {
+    urlSearchRequestRef.current += 1;
     if (infoAbortRef.current) {
       infoAbortRef.current.abort();
       infoAbortRef.current = null;
     }
     setLoadingInfo(false);
     setUrlError('Busca cancelada.');
-  };
+  }, []);
+
+  const resetUrlSearch = useCallback(() => {
+    cancelInfoSearch();
+    setUrl('');
+    setUrlError('');
+    setVideoInfo(null);
+    setVideoInfoSourceUrl('');
+    setSelectedPlaylistItemId('');
+  }, [cancelInfoSearch]);
 
   const closeUrlTaskChannel = useCallback((taskId: string) => {
     const source = urlSseRef.current.get(taskId);
@@ -416,7 +666,7 @@ export default function Home() {
     const targetUrl = entry?.url || url;
     if (!targetUrl) return;
 
-    const taskId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const taskId = createClientTaskId();
 
     setUrlTasks((prev) => [
       ...prev,
@@ -480,16 +730,57 @@ export default function Home() {
       `${apiBase}/api/download?url=${encodeURIComponent(targetUrl)}&format=${format}&quality=${quality}&id=${taskId}&title=${encodeURIComponent(entry.title || 'download')}`,
       accessToken,
     );
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (format === 'audio') {
+      (async () => {
+        try {
+          const response = await fetch(downloadUrl, { cache: 'no-store' });
+          if (!response.ok) {
+            const payload = await response.json().catch(() => null);
+            throw new Error(payload?.error || `Falha no download (${response.status}).`);
+          }
+          const blob = await response.blob();
+          if (!blob || blob.size <= 0) {
+            throw new Error('Arquivo de audio retornou vazio.');
+          }
+
+          const fallbackName = `${entry.title || 'download'}.mp3`;
+          const filename = guessFilenameFromHeader(response.headers.get('content-disposition'), fallbackName);
+          const objectUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl;
+          a.download = filename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(objectUrl);
+        } catch (error) {
+          closeUrlTaskChannel(taskId);
+          setUrlTasks((prev) =>
+            prev.map((task) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    status: 'error',
+                    size: error instanceof Error ? error.message : 'Falha ao baixar audio',
+                  }
+                : task,
+            ),
+          );
+        }
+      })();
+    } else {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
 
     return taskId;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, apiBase, format, quality, url]);
+  }, [accessToken, apiBase, closeUrlTaskChannel, format, quality, url]);
 
   const startDownloadQueue = useCallback(() => {
     if (urlDownloadBusyRef.current) return;
@@ -571,8 +862,15 @@ export default function Home() {
             url,
           },
         ];
+    const selectedEntry = entries.find((entry) => entry.id === selectedPlaylistItemId) || entries[0];
+    const entriesToDownload =
+      videoInfo.isPlaylist && playlistDownloadMode === 'single'
+        ? selectedEntry
+          ? [selectedEntry]
+          : entries.slice(0, 1)
+        : entries;
 
-    urlDownloadQueueRef.current = [...urlDownloadQueueRef.current, ...entries];
+    urlDownloadQueueRef.current = [...urlDownloadQueueRef.current, ...entriesToDownload];
     startDownloadQueue();
   };
 
@@ -607,8 +905,17 @@ export default function Home() {
     const completedIds = urlTasks
       .filter((task) => task.status === 'completed' || task.status === 'error')
       .map((task) => task.id);
+    const wasCurrentTaskRemoved =
+      currentUrlTaskIdRef.current != null && completedIds.includes(currentUrlTaskIdRef.current);
     completedIds.forEach((id) => closeUrlTaskChannel(id));
     setUrlTasks((prev) => prev.filter((task) => !completedIds.includes(task.id)));
+    if (wasCurrentTaskRemoved) {
+      currentUrlTaskIdRef.current = null;
+      urlDownloadBusyRef.current = false;
+      if (urlDownloadQueueRef.current.length > 0) {
+        window.setTimeout(() => startDownloadQueue(), 150);
+      }
+    }
   };
 
   const fetchMediaJobs = useCallback(async () => {
@@ -1171,7 +1478,7 @@ export default function Home() {
             onSubmit={handleLogin}
             className="w-full rounded-2xl border border-[#454652]/35 bg-[#171f33]/85 p-6 shadow-[0_20px_60px_rgba(6,14,32,0.55)]"
           >
-            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">OpenDownloader Local</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">MP3ok</p>
             <h1 className="mt-2 text-2xl font-black text-[#e2dfff]">Entrar</h1>
             <p className="mt-2 text-sm text-[#c5c5d4]">Acesso protegido por Supabase Authentication.</p>
 
@@ -1210,26 +1517,21 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen text-[#dae2fd] selection:bg-[#c3c0ff] selection:text-[#272377]">
-      <nav className="fixed top-0 z-50 w-full border-b border-[#454652]/20 bg-[#0b1326]/70 backdrop-blur-2xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">OpenDownloader Local</p>
-            <p className="mt-1 text-lg font-extrabold tracking-tight text-[#e2dfff]">Transcoder.ai</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden rounded-full border border-[#454652]/35 bg-[#171f33]/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#bdf4ff] sm:block">
-              Digital Alchemist
-            </div>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(95,147,255,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(126,224,255,0.12),transparent_26%),linear-gradient(180deg,#08111f_0%,#0b1326_42%,#0f1830_100%)] text-[#dce7fb] selection:bg-[#8ecbff] selection:text-[#08111f]">
+      <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#08111f]">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 py-4 sm:px-8">
+          <div />
+          <p className="text-center text-3xl font-black tracking-[0.08em] text-white sm:text-4xl">MP3ok</p>
+          <div className="flex items-center justify-self-end gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-[#8f909e]">Logado</p>
-              <p className="max-w-[220px] truncate text-xs text-[#c5c5d4]">{session.user.email || '-'}</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#8fb7ff]">Logado</p>
+              <p className="max-w-[220px] truncate text-xs text-[#dce7fb]">{session.user.email || '-'}</p>
             </div>
             <button
               type="button"
               onClick={handleLogout}
               disabled={authLoading}
-              className="h-9 rounded-xl border border-[#454652]/35 bg-[#171f33]/75 px-3 text-xs font-semibold text-[#dae2fd] disabled:opacity-60"
+              className="h-9 rounded-xl border border-[#87b6ff]/20 bg-white/8 px-3 text-xs font-semibold text-[#dce7fb] disabled:opacity-60"
             >
               Sair
             </button>
@@ -1238,21 +1540,91 @@ export default function Home() {
       </nav>
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-14 pt-28 sm:px-8">
-        <header className="relative overflow-hidden rounded-[28px] border border-[#454652]/30 bg-gradient-to-br from-[#171f33] via-[#131b2e] to-[#0b1326] p-8 shadow-[0_20px_60px_rgba(6,14,32,0.55)]">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(195,192,255,0.16),transparent_45%),radial-gradient(circle_at_80%_0%,rgba(157,240,255,0.1),transparent_38%)]" />
+        <section className="relative mb-5 overflow-hidden rounded-[28px] border border-[#8fb7ff]/18 bg-[rgba(244,248,255,0.92)] shadow-[0_18px_48px_rgba(10,22,43,0.18)] backdrop-blur-2xl">
+          <div className="grid gap-0 lg:grid-cols-[1.35fr_0.9fr]">
+            <article className={`relative overflow-hidden p-6 sm:p-7 bg-gradient-to-br ${currentPromo.accent}`}>
+              <img
+                src={currentPromo.imageUrl}
+                alt={currentPromo.title}
+                className="absolute inset-0 h-full w-full object-cover opacity-35"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_36%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.12),transparent_30%),linear-gradient(140deg,rgba(11,24,49,0.72),rgba(18,52,101,0.5))]" />
+              <div className="relative flex h-full flex-col justify-between gap-6">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-white/75">{currentPromo.eyebrow}</p>
+                  <h2 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-white sm:text-3xl">
+                    {currentPromo.title}
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/82">{currentPromo.description}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
+                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">{currentPromo.meta}</span>
+                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">Banner fixo</span>
+                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">Carrossel automatico</span>
+                </div>
+              </div>
+            </article>
+            <aside className="grid gap-3 p-4 sm:p-5">
+              {promoPreviewSlides.map(({ slide, index }) => (
+                <button
+                  key={`${slide.title}-${index}`}
+                  type="button"
+                  onClick={() => setPromoIndex(index)}
+                  className={`rounded-[20px] border p-4 text-left transition ${
+                    index === promoIndex
+                      ? 'border-[#6ea1ff]/55 bg-[#eaf2ff] shadow-[0_12px_30px_rgba(31,79,166,0.12)]'
+                      : 'border-[#d8e4f5] bg-white/80 hover:border-[#9dc3ff]'
+                  }`}
+                >
+                  <div className="mb-3 h-20 overflow-hidden rounded-xl border border-[#c8d9ef] bg-[#dbe8fa]">
+                    <img src={slide.imageUrl} alt={slide.title} className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#6f86a8]">{slide.eyebrow}</p>
+                  <p className="mt-2 text-sm font-semibold leading-5 text-[#10203a]">{slide.title}</p>
+                  <p className="mt-2 text-xs leading-5 text-[#4f627f]">{slide.description}</p>
+                </button>
+              ))}
+              <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[#d8e4f5] bg-white/72 px-4 py-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f86a8]">Rotacao</p>
+                  <p className="text-sm font-semibold text-[#10203a]">
+                    {promoIndex + 1}/{PROMO_SLIDES.length}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {PROMO_SLIDES.map((slide, index) => (
+                    <button
+                      key={slide.meta}
+                      type="button"
+                      onClick={() => setPromoIndex(index)}
+                      className={`h-2.5 rounded-full transition ${
+                        index === promoIndex ? 'w-8 bg-[#1f5db0]' : 'w-2.5 bg-[#b9cbe6]'
+                      }`}
+                      aria-label={`Ir para anuncio ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <header className="relative overflow-hidden rounded-[32px] border border-[#cad9ee] bg-[linear-gradient(135deg,rgba(250,251,255,0.98),rgba(240,244,251,0.96),rgba(228,235,246,0.96))] p-8 text-[#10203a] shadow-[0_24px_70px_rgba(10,22,43,0.18)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(31,79,166,0.08),transparent_28%),radial-gradient(circle_at_86%_0%,rgba(126,224,255,0.12),transparent_26%)]" />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#454652]/35 bg-[#222a3d]/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#c3c0ff]">
-              <span className="h-2 w-2 rounded-full bg-[#9cf0ff] shadow-[0_0_10px_rgba(157,240,255,0.9)]" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#c9d9ef] bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#1f5db0]">
+              <span className="h-2 w-2 rounded-full bg-[#1f5db0] shadow-[0_0_10px_rgba(31,93,176,0.75)]" />
               Processamento em tempo real
             </div>
-            <h1 className="mt-4 max-w-4xl text-3xl font-black leading-tight text-[#e2dfff] sm:text-5xl">
-              De URL para midia em segundos.
-              <span className="block bg-gradient-to-r from-[#c3c0ff] via-[#bdf4ff] to-[#5250a4] bg-clip-text text-transparent">
+            <h1 className="mt-4 max-w-4xl font-serif text-4xl font-bold leading-tight text-[#10203a] sm:text-6xl">
+              MP3ok.
+              <span className="block text-[#1f5db0]">
                 Downloader + Conversor + Otimizador + Thumbnail Studio
               </span>
             </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#c5c5d4] sm:text-base">
-              Cole links, processe arquivos em lote e gere resultados com fila automatica em um painel visual premium.
+            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#4f627f] sm:text-base">
+              Cole links, processe arquivos em lote e gere resultados com fila automatica em um painel editorial, rapido e legivel.
             </p>
           </div>
 
@@ -1262,8 +1634,8 @@ export default function Home() {
               onClick={() => setActiveTab('url')}
               className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
                 activeTab === 'url'
-                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
-                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
+                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
               }`}
             >
               Downloader
@@ -1273,8 +1645,8 @@ export default function Home() {
               onClick={() => setActiveTab('media')}
               className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
                 activeTab === 'media'
-                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
-                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
+                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
               }`}
             >
               Conversor
@@ -1284,8 +1656,8 @@ export default function Home() {
               onClick={() => setActiveTab('thumb')}
               className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
                 activeTab === 'thumb'
-                  ? 'bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-[#100563] shadow-[0_12px_28px_rgba(195,192,255,0.35)]'
-                  : 'border border-[#454652]/35 bg-[#2d3449]/65 text-[#dae2fd] hover:bg-[#31394d]'
+                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
+                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
               }`}
             >
               Thumbnails
@@ -1295,19 +1667,20 @@ export default function Home() {
 
         {activeTab === 'url' ? (
           <section className="mt-6 space-y-6">
-            <div className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
+            <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="url"
                   placeholder="Cole uma URL de video..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="h-12 flex-1 rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 text-sm outline-none focus:border-[#c3c0ff]"
+                  className="h-12 flex-1 rounded-2xl border border-[#cad9ee] bg-white/90 px-4 text-sm text-[#10203a] outline-none placeholder:text-[#8aa0be] focus:border-[#1f5db0] focus:bg-white"
                 />
                 <button
+                  type="button"
                   onClick={fetchInfo}
-                  disabled={loadingInfo || !url}
-                  className="h-12 rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] px-6 text-sm font-semibold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-50"
+                  disabled={loadingInfo || !url.trim()}
+                  className="h-12 rounded-2xl bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(31,93,176,0.22)] disabled:opacity-50"
                 >
                   {loadingInfo ? 'Buscando...' : 'Buscar midia'}
                 </button>
@@ -1315,40 +1688,105 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={cancelInfoSearch}
-                    className="h-12 rounded-xl border border-rose-400 bg-slate-900 px-4 text-sm font-semibold text-rose-300"
+                    className="h-12 rounded-2xl border border-[#e08a8a] bg-[#fff5f5] px-4 text-sm font-semibold text-[#b42318]"
                   >
                     Cancelar
                   </button>
                 ) : null}
+                <button
+                  type="button"
+                  onClick={resetUrlSearch}
+                  className="h-12 rounded-2xl border border-[#cad9ee] bg-white/90 px-4 text-sm font-semibold text-[#10203a] hover:bg-white"
+                >
+                  Limpar busca
+                </button>
               </div>
-              {urlError ? <p className="mt-3 text-sm text-rose-400">{urlError}</p> : null}
+              {urlError ? <p className="mt-3 text-sm text-[#b42318]">{urlError}</p> : null}
             </div>
 
             {videoInfo ? (
-              <div className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
+              <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                  <div className="h-32 w-full overflow-hidden rounded-xl bg-slate-800 sm:w-56">
+                  <div className="h-32 w-full overflow-hidden rounded-2xl border border-[#d8e4f5] bg-white/90 sm:w-56">
                     {videoInfo.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={videoInfo.thumbnail} alt={videoInfo.title} className="h-full w-full object-cover" />
                     ) : null}
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-lg font-bold">{videoInfo.title}</h2>
+                    <h2 className="font-serif text-2xl font-bold leading-tight text-[#10203a]">{videoInfo.title}</h2>
                     {videoInfo.isPlaylist ? (
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="mt-1 text-sm leading-6 text-[#4f627f]">
                         Playlist detectada: {videoInfo.entryCount || videoInfo.entries?.length || 0} item(ns). O download sera feito em fila, um por vez.
                       </p>
                     ) : (
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="mt-1 text-sm leading-6 text-[#4f627f]">
                         Duracao: {Math.floor(videoInfo.duration / 60)}:{(videoInfo.duration % 60).toString().padStart(2, '0')}
                       </p>
                     )}
+                    {videoInfo.isPlaylist ? (
+                      <div className="mt-4 rounded-[24px] border border-[#d8e4f5] bg-[#f6f9fd] p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6f86a8]">Controle da playlist</p>
+                            <p className="mt-1 text-xs leading-5 text-[#4f627f]">
+                              Escolha baixar a lista inteira ou apenas um item especifico.
+                            </p>
+                          </div>
+                          <div className="inline-flex rounded-full border border-[#cad9ee] bg-white p-1 shadow-[0_6px_16px_rgba(10,22,43,0.06)]">
+                            <button
+                              type="button"
+                              onClick={() => setPlaylistDownloadMode('all')}
+                              className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                                playlistDownloadMode === 'all'
+                                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white'
+                                  : 'text-[#4f627f] hover:text-[#10203a]'
+                              }`}
+                            >
+                              Lista inteira
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPlaylistDownloadMode('single')}
+                              className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                                playlistDownloadMode === 'single'
+                                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white'
+                                  : 'text-[#4f627f] hover:text-[#10203a]'
+                              }`}
+                            >
+                              Apenas 1 item
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                          <label className="block">
+                            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6f86a8]">Item da lista</span>
+                            <select
+                              value={selectedPlaylistItemId}
+                              onChange={(e) => setSelectedPlaylistItemId(e.target.value)}
+                              disabled={playlistDownloadMode !== 'single'}
+                              className="mt-1 h-11 w-full rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a] disabled:cursor-not-allowed disabled:bg-[#f3f6fb] disabled:text-[#7f92ad]"
+                            >
+                              {(videoInfo.entries || []).map((entry, index) => (
+                                <option key={entry.id} value={entry.id}>
+                                  {index + 1}. {entry.title}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="rounded-2xl border border-[#d8e4f5] bg-white/85 px-3 py-2 text-xs leading-5 text-[#4f627f]">
+                            {playlistDownloadMode === 'single'
+                              ? 'Baixa apenas o item escolhido.'
+                              : 'Mantem o fluxo atual e envia todos os itens em fila.'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value as 'video' | 'audio')}
-                        className="h-11 rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                        className="h-11 rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a]"
                       >
                         <option value="video">MP4 Video</option>
                         <option value="audio">MP3 Audio</option>
@@ -1356,7 +1794,7 @@ export default function Home() {
                       <select
                         value={quality}
                         onChange={(e) => setQuality(e.target.value)}
-                        className="h-11 rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                        className="h-11 rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a]"
                         disabled={format === 'audio'}
                       >
                         <option value="best">Best</option>
@@ -1366,9 +1804,13 @@ export default function Home() {
                       </select>
                       <button
                         onClick={startDownload}
-                        className="h-11 rounded-xl bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-4 text-sm font-semibold text-[#00363d] hover:brightness-110"
+                        className="h-11 rounded-2xl bg-gradient-to-br from-[#0f2a56] to-[#1f5db0] px-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,42,86,0.18)] hover:brightness-110"
                       >
-                        {videoInfo.isPlaylist ? 'Download Lista' : 'Download'}
+                        {videoInfo.isPlaylist
+                          ? playlistDownloadMode === 'single'
+                            ? 'Baixar 1 item'
+                            : 'Lista inteira'
+                          : 'Download'}
                       </button>
                     </div>
                   </div>
@@ -1377,22 +1819,22 @@ export default function Home() {
             ) : null}
 
             {urlTasks.length ? (
-              <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
+              <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_16px_38px_rgba(10,22,43,0.12)] backdrop-blur-xl">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold">Fila de downloads por URL</h3>
+                  <h3 className="text-lg font-semibold text-[#10203a]">Fila de downloads por URL</h3>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={removeCompletedUrlTasks}
                       disabled={!urlTasks.some((task) => task.status === 'completed' || task.status === 'error')}
-                      className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                      className="rounded-xl border border-[#cad9ee] bg-white/80 px-3 py-1 text-xs font-semibold text-[#10203a] disabled:opacity-50"
                     >
                       Remover concluidos
                     </button>
                     <button
                       type="button"
                       onClick={clearUrlTasks}
-                      className="rounded-lg border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-300"
+                      className="rounded-xl border border-[#e08a8a] bg-[#fff5f5] px-3 py-1 text-xs font-semibold text-[#b42318]"
                     >
                       Limpar lista
                     </button>
@@ -1400,25 +1842,25 @@ export default function Home() {
                 </div>
                 <div className="space-y-3">
                   {urlTasks.map((task) => (
-                    <div key={task.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
+                    <div key={task.id} className="rounded-2xl border border-[#d8e4f5] bg-white/88 p-4">
                       <div className="flex justify-between gap-3">
-                        <p className="truncate text-sm font-semibold">{task.title}</p>
-                        <p className="text-xs text-slate-400">
+                        <p className="truncate text-sm font-semibold text-[#10203a]">{task.title}</p>
+                        <p className="text-xs text-[#6f86a8]">
                           {task.status === 'error' ? 'Falhou' : task.status === 'completed' ? 'Concluido' : `${task.progress.toFixed(1)}%`}
                         </p>
                       </div>
-                      <div className="mt-2 h-2 w-full rounded-full bg-slate-800">
+                      <div className="mt-2 h-2 w-full rounded-full bg-[#e8eff8]">
                         <div
-                          className={`h-2 rounded-full ${task.status === 'error' ? 'bg-rose-500' : task.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                          className={`h-2 rounded-full ${task.status === 'error' ? 'bg-[#e5484d]' : task.status === 'completed' ? 'bg-[#1a9f6d]' : 'bg-[#1f5db0]'}`}
                           style={{ width: `${task.progress}%` }}
                         />
                       </div>
-                      <p className="mt-2 text-xs text-slate-400">{task.size}</p>
+                      <p className="mt-2 text-xs text-[#6f86a8]">{task.size}</p>
                       <div className="mt-3">
                         <button
                           type="button"
                           onClick={() => removeSingleUrlTask(task.id)}
-                          className="rounded-lg border border-rose-400 px-3 py-1 text-xs font-semibold text-rose-300"
+                          className="rounded-xl border border-[#e08a8a] bg-[#fff5f5] px-3 py-1 text-xs font-semibold text-[#b42318]"
                         >
                           Remover
                         </button>
@@ -1812,69 +2254,128 @@ export default function Home() {
           </section>
         )}
 
-        <section className="mt-8 rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
-          <div className="mb-4 flex items-center justify-between gap-4">
+        <section className="mt-8 rounded-[32px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h3 className="text-lg font-extrabold text-[#e2dfff]">Radar Retro BR</h3>
-              <p className="mt-1 text-sm text-[#c5c5d4]">
-                Coleta automatica de noticias sobre musica brasileira antiga, raridades e entrevistas.
+              <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-[#1f5db0]">Newsroom / briefing</p>
+              <h3 className="mt-2 font-serif text-2xl font-bold text-[#10203a]">Radar Retro BR</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4f627f]">
+                Coleta automatica de noticias sobre musica brasileira antiga, raridades e entrevistas com leitura mais clara.
               </p>
             </div>
             <button
               type="button"
               onClick={() => fetchNews(true)}
               disabled={newsLoading}
-              className="h-10 rounded-full bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] px-4 text-xs font-bold uppercase tracking-[0.12em] text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-50"
+              className="h-10 rounded-full bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] px-4 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-[0_10px_24px_rgba(31,93,176,0.22)] disabled:opacity-50"
             >
               {newsLoading ? 'Atualizando...' : 'Atualizar feed'}
             </button>
           </div>
 
-          {newsError ? <p className="mb-3 text-sm text-rose-400">{newsError}</p> : null}
+          {newsError ? <p className="mb-4 text-sm text-[#b42318]">{newsError}</p> : null}
 
           {newsItems.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-[#454652]/35 p-4 text-sm text-[#c5c5d4]">
+            <p className="rounded-[22px] border border-dashed border-[#cad9ee] bg-white/80 p-4 text-sm text-[#4f627f]">
               Nenhuma noticia encontrada ainda. Clique em &quot;Atualizar feed&quot; para buscar agora.
             </p>
           ) : (
-            <div className="grid max-h-[420px] gap-3 overflow-y-auto pr-1">
-              {newsItems.map((item) => (
-                <article key={item.source_url} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
-                  <div className="flex items-start gap-3">
-                    {item.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="h-16 w-24 flex-shrink-0 rounded-lg object-cover"
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[#8f909e]">
-                        <span className="font-bold text-[#9cf0ff]">{item.source_name || 'Fonte'}</span>
-                        {item.published_at ? (
-                          <span>{new Date(item.published_at).toLocaleDateString('pt-BR')}</span>
-                        ) : null}
-                      </div>
-                      <a
-                        href={item.source_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="line-clamp-2 text-sm font-bold text-[#e2dfff] hover:text-[#bdf4ff]"
-                      >
-                        {item.title}
-                      </a>
-                      {item.summary ? (
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#c5c5d4]">{item.summary}</p>
-                      ) : null}
-                      {item.tags ? (
-                        <p className="mt-2 text-[11px] text-[#8f909e]">Tags: {item.tags}</p>
-                      ) : null}
-                    </div>
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.84fr]">
+              <article className="overflow-hidden rounded-[28px] border border-[#d8e4f5] bg-white/92 shadow-[0_14px_30px_rgba(10,22,43,0.08)]">
+                {featuredNews?.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={featuredNews.image_url}
+                    alt={featuredNews.title}
+                    className="h-64 w-full object-cover sm:h-72"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-64 items-center justify-center bg-[linear-gradient(135deg,rgba(31,93,176,0.14),rgba(126,224,255,0.12))] text-sm font-semibold uppercase tracking-[0.24em] text-[#1f5db0] sm:h-72">
+                    Destaque editorial
                   </div>
-                </article>
-              ))}
+                )}
+                <div className="p-5 sm:p-6">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[#6f86a8]">
+                    <span className="rounded-full bg-[#eaf2ff] px-2 py-1 font-bold text-[#1f5db0]">
+                      {featuredNews.source_name || 'Fonte'}
+                    </span>
+                    {featuredNews.published_at ? <span>{formatNewsDate(featuredNews.published_at)}</span> : null}
+                    {typeof featuredNews.score === 'number' ? <span>Score {featuredNews.score.toFixed(1)}</span> : null}
+                  </div>
+                  <a
+                    href={featuredNews.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 block font-serif text-3xl font-bold leading-tight text-[#10203a] transition hover:text-[#1f5db0]"
+                  >
+                    {featuredNews.title}
+                  </a>
+                  {featuredNews.summary ? (
+                    <p className="mt-3 text-sm leading-7 text-[#4f627f]">{featuredNews.summary}</p>
+                  ) : null}
+                  {featuredNews.tags ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {featuredNews.tags.split(',').map((tag) => (
+                        <span
+                          key={tag.trim()}
+                          className="rounded-full border border-[#d8e4f5] bg-[#f6f9fd] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5f7391]"
+                        >
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </article>
+
+              <div className="space-y-4">
+                <div className="rounded-[24px] border border-[#d8e4f5] bg-[#0f2a56] p-5 text-white shadow-[0_14px_30px_rgba(15,42,86,0.16)]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8ecbff]">Ultimos briefings</p>
+                  <p className="mt-2 text-sm leading-6 text-white/78">
+                    A coluna lateral prioriza leitura rapida, sem poluir o painel principal.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {briefingNews.map((item) => (
+                    <article key={item.source_url} className="rounded-[24px] border border-[#d8e4f5] bg-white/90 p-4 shadow-[0_8px_20px_rgba(10,22,43,0.06)]">
+                      <div className="flex items-start gap-3">
+                        {item.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="h-20 w-24 flex-shrink-0 rounded-2xl object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-20 w-24 flex-shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(31,93,176,0.16),rgba(126,224,255,0.12))] text-[10px] font-bold uppercase tracking-[0.18em] text-[#1f5db0]">
+                            Briefing
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f86a8]">
+                            <span className="text-[#1f5db0]">{item.source_name || 'Fonte'}</span>
+                            {item.published_at ? <span>{formatNewsDate(item.published_at)}</span> : null}
+                          </div>
+                          <a
+                            href={item.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="line-clamp-2 text-sm font-semibold leading-6 text-[#10203a] transition hover:text-[#1f5db0]"
+                          >
+                            {item.title}
+                          </a>
+                          {item.summary ? (
+                            <p className="mt-1 line-clamp-2 text-xs leading-6 text-[#4f627f]">{item.summary}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </section>

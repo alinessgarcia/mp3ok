@@ -12,6 +12,8 @@ const {
   THUMB_PRESET_SET,
   processThumbnailJob,
 } = require('./thumbnailProcessor');
+const { openSseStream } = require('./sse');
+const { assertPublicHttpUrl, isUuidLike } = require('./urlSafety');
 
 const router = express.Router();
 
@@ -88,7 +90,7 @@ function parseIds(body) {
   if (!Array.isArray(body?.ids)) {
     return [];
   }
-  return body.ids.filter((id) => typeof id === 'string' && id.trim().length > 0);
+  return body.ids.filter((id) => typeof id === 'string' && isUuidLike(id));
 }
 
 function parseUrls(body) {
@@ -144,6 +146,25 @@ async function cleanupUploads(files) {
   );
 }
 
+function validateFormatAndQuality(format, quality) {
+  const normalizedFormat = String(format || '').trim();
+  if (!['audio', 'video'].includes(normalizedFormat)) {
+    return 'Formato invalido.';
+  }
+
+  const normalizedQuality = String(quality || 'best').trim();
+  if (normalizedQuality === 'best') {
+    return null;
+  }
+
+  const numericQuality = Number.parseInt(normalizedQuality, 10);
+  if (!Number.isInteger(numericQuality) || numericQuality < 144 || numericQuality > 4320) {
+    return 'Quality invalida. Use best ou um valor numerico de altura em pixels.';
+  }
+
+  return null;
+}
+
 // GET /api/info?url={url}
 router.get('/info', async (req, res, next) => {
     try {
@@ -151,7 +172,8 @@ router.get('/info', async (req, res, next) => {
         if (!url) {
             return res.status(400).json({ error: 'URL parameter is required.' });
         }
-        const info = await getInfo(url);
+        const safeUrl = await assertPublicHttpUrl(url, 'URL de midia');
+        const info = await getInfo(safeUrl.toString());
         res.json(info);
     } catch (error) {
         next(error);
@@ -161,12 +183,26 @@ router.get('/info', async (req, res, next) => {
 // GET /api/download?url={url}&format={audio|video}&quality={best|1080|720}&id={taskId}
 router.get('/download', (req, res, next) => {
     try {
-        const { url, format, quality, id, title } = req.query;
+        const { url, format, quality, id, title, scope, entryUrl } = req.query;
         if (!url || !format || !id) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
-        downloadMedia(req, res, { url, format, quality, id, title });
+        if (!isUuidLike(id)) {
+          return res.status(400).json({ error: 'Task ID invalido.' });
+        }
+
+        const formatError = validateFormatAndQuality(format, quality);
+        if (formatError) {
+          return res.status(400).json({ error: formatError });
+        }
+
+        const normalizedScope = String(scope || 'item').trim().toLowerCase();
+        if (normalizedScope && !['item', 'list'].includes(normalizedScope)) {
+          return res.status(400).json({ error: 'Scope invalido. Use item ou list.' });
+        }
+
+        downloadMedia(req, res, { url, format, quality, id, title, scope: normalizedScope || 'item', entryUrl });
     } catch (error) {
         next(error);
     }
@@ -233,7 +269,7 @@ router.get('/news/health', async (req, res, next) => {
 // GET /api/progress?id={taskId}
 router.get('/progress', (req, res) => {
     const { id } = req.query;
-    if (!id) {
+    if (!id || !isUuidLike(id)) {
         return res.status(400).json({ error: 'Task ID is required for SSE.' });
     }
     subscribeProgress(id, req, res);
@@ -295,7 +331,7 @@ router.get('/media/jobs', (_req, res) => {
 // GET /api/media/jobs/:id/progress
 router.get('/media/jobs/:id/progress', (req, res) => {
   const { id } = req.params;
-  if (!id) {
+  if (!id || !isUuidLike(id)) {
     return res.status(400).json({ error: 'Job id obrigatorio.' });
   }
 
@@ -304,13 +340,9 @@ router.get('/media/jobs/:id/progress', (req, res) => {
     return res.status(404).json({ error: 'Job nao encontrado.' });
   }
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
+  const stream = openSseStream(req, res);
   const push = (payload) => {
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    stream.send(payload);
   };
 
   push(mediaQueue.serialize(job));
@@ -318,12 +350,16 @@ router.get('/media/jobs/:id/progress', (req, res) => {
 
   req.on('close', () => {
     unsubscribe();
+    stream.close();
   });
 });
 
 // GET /api/media/jobs/:id/download
 router.get('/media/jobs/:id/download', async (req, res) => {
   const { id } = req.params;
+  if (!id || !isUuidLike(id)) {
+    return res.status(400).json({ error: 'Job id invalido.' });
+  }
   const job = mediaQueue.getRaw(id);
   if (!job) {
     return res.status(404).json({ error: 'Job nao encontrado.' });
@@ -350,6 +386,9 @@ router.get('/media/jobs/:id/download', async (req, res) => {
 
 // DELETE /api/media/jobs/:id
 router.delete('/media/jobs/:id', async (req, res) => {
+  if (!isUuidLike(req.params.id)) {
+    return res.status(400).json({ error: 'Job id invalido.' });
+  }
   const result = await mediaQueue.removeByIds([req.params.id]);
   res.json(result);
 });
@@ -471,7 +510,7 @@ router.get('/thumbnails/jobs', (_req, res) => {
 // GET /api/thumbnails/jobs/:id/progress
 router.get('/thumbnails/jobs/:id/progress', (req, res) => {
   const { id } = req.params;
-  if (!id) {
+  if (!id || !isUuidLike(id)) {
     return res.status(400).json({ error: 'Job id obrigatorio.' });
   }
 
@@ -480,13 +519,9 @@ router.get('/thumbnails/jobs/:id/progress', (req, res) => {
     return res.status(404).json({ error: 'Job nao encontrado.' });
   }
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
+  const stream = openSseStream(req, res);
   const push = (payload) => {
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    stream.send(payload);
   };
 
   push(thumbnailQueue.serialize(job));
@@ -494,12 +529,16 @@ router.get('/thumbnails/jobs/:id/progress', (req, res) => {
 
   req.on('close', () => {
     unsubscribe();
+    stream.close();
   });
 });
 
 // GET /api/thumbnails/jobs/:id/download
 router.get('/thumbnails/jobs/:id/download', async (req, res) => {
   const { id } = req.params;
+  if (!id || !isUuidLike(id)) {
+    return res.status(400).json({ error: 'Job id invalido.' });
+  }
   const job = thumbnailQueue.getRaw(id);
   if (!job) {
     return res.status(404).json({ error: 'Job nao encontrado.' });
@@ -526,6 +565,9 @@ router.get('/thumbnails/jobs/:id/download', async (req, res) => {
 
 // DELETE /api/thumbnails/jobs/:id
 router.delete('/thumbnails/jobs/:id', async (req, res) => {
+  if (!isUuidLike(req.params.id)) {
+    return res.status(400).json({ error: 'Job id invalido.' });
+  }
   const result = await thumbnailQueue.removeByIds([req.params.id]);
   res.json(result);
 });

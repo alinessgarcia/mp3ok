@@ -11,6 +11,7 @@ class MediaQueue {
     this.stateFile = stateFile;
     this.outputDir = outputDir;
     this.processor = typeof processor === 'function' ? processor : processMediaJob;
+    this.jobTimeoutMs = Math.max(0, Number(process.env.MEDIA_JOB_TIMEOUT_MS || 60 * 60 * 1000));
     this.jobs = new Map();
     this.waiting = [];
     this.running = 0;
@@ -152,19 +153,42 @@ class MediaQueue {
       job.progressLabel = 'Iniciando processamento';
       job.updatedAt = new Date().toISOString();
       this.persistState();
+      this.emitProgress(job);
+
+      const controller = new AbortController();
+      let timeout = null;
+      let timedOut = false;
+      const progressCb = (progress, label) => {
+        if (timedOut || job.discarded || !this.jobs.has(job.id)) {
+          return;
+        }
+        job.progress = progress;
+        job.progressLabel = label;
+        job.updatedAt = new Date().toISOString();
+        this.persistState();
         this.emitProgress(job);
+      };
 
       try {
-        const result = await this.processor(job, this.outputDir, (progress, label) => {
-          if (job.discarded || !this.jobs.has(job.id)) {
-            return;
-          }
-          job.progress = progress;
-          job.progressLabel = label;
-          job.updatedAt = new Date().toISOString();
-          this.persistState();
-          this.emitProgress(job);
+        const processorPromise = this.processor(job, this.outputDir, progressCb, {
+          signal: controller.signal,
         });
+
+        const result = this.jobTimeoutMs > 0
+          ? await Promise.race([
+              processorPromise,
+              new Promise((_, reject) => {
+                timeout = setTimeout(() => {
+                  timedOut = true;
+                  controller.abort();
+                  reject(new Error('Tempo limite de processamento excedido.'));
+                }, this.jobTimeoutMs);
+                if (typeof timeout.unref === 'function') {
+                  timeout.unref();
+                }
+              }),
+            ])
+          : await processorPromise;
 
         if (job.discarded || !this.jobs.has(job.id)) {
           await this.safeRemove(result.outputPath);
@@ -184,7 +208,15 @@ class MediaQueue {
           this.emitProgress(job);
         }
       } catch (error) {
-        if (job.discarded || !this.jobs.has(job.id)) {
+        if (timedOut || controller.signal.aborted) {
+          job.status = 'failed';
+          job.progress = 0;
+          job.progressLabel = 'Falha';
+          job.error = error.message || 'Tempo limite de processamento excedido.';
+          job.updatedAt = new Date().toISOString();
+          this.persistState();
+          this.emitProgress(job);
+        } else if (job.discarded || !this.jobs.has(job.id)) {
           await this.safeRemove(job.inputPath);
         } else {
           job.status = 'failed';
@@ -196,7 +228,11 @@ class MediaQueue {
           this.emitProgress(job);
         }
       } finally {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
         this.running -= 1;
+        this.processNext();
       }
     }
   }
