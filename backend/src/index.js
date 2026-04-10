@@ -22,7 +22,21 @@ const enableRateLimit =
     ? process.env.ENABLE_API_RATE_LIMIT === 'true'
     : process.env.NODE_ENV === 'production';
 
-app.use(cors());
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+  : [];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Render health checks)
+    if (!origin) return callback(null, true);
+    // If no allowlist configured, allow everything (local dev)
+    if (ALLOWED_ORIGINS.length === 0) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin not allowed: ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 const limiter = rateLimit({
