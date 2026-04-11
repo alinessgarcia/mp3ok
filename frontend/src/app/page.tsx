@@ -1125,31 +1125,55 @@ export default function Home() {
     });
   }, [accessToken, apiBase, thumbJobs]);
 
-  const buildAdvancedPayload = () => {
-    if (!showAdvanced) {
+  const parseNumericInput = (raw: string) => {
+    const normalized = String(raw || '')
+      .trim()
+      .replace(',', '.');
+    if (!normalized) {
       return null;
     }
 
-    const payload: Record<string, string | number> = {};
+    const value = Number(normalized);
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+    return value;
+  };
 
-    if (mediaOperation === 'optimize-mp4' || mediaOperation === 'gif-to-mp4') {
-      payload.crf = Number(advancedCrf);
-    }
-    if (mediaOperation === 'mp4-to-gif') {
-      payload.width = Number(advancedWidth);
-      payload.fps = Number(advancedFps);
-    }
-    if (mediaOperation === 'optimize-png' || mediaOperation === 'optimize-jpeg') {
-      payload.quality = Number(advancedQuality);
-    }
-    if (mediaOperation === 'optimize-gif') {
-      payload.lossy = Number(advancedLossy);
-      payload.colors = Number(advancedColors);
-    }
+  const buildAdvancedPayload = () => {
+    const payload: Record<string, number> = {};
+    const addNumeric = (key: string, raw: string) => {
+      const value = parseNumericInput(raw);
+      if (value !== null) {
+        payload[key] = value;
+      }
+    };
+
+    // Segmentacao por minutos deve funcionar mesmo com o modo avancado fechado.
     if (mediaOperation === 'mp4-to-mp3-segmented') {
-      payload.segmentMinutes = Number(advancedSegmentMinutes);
+      addNumeric('segmentMinutes', advancedSegmentMinutes);
     }
 
+    if (showAdvanced) {
+      if (mediaOperation === 'optimize-mp4' || mediaOperation === 'gif-to-mp4') {
+        addNumeric('crf', advancedCrf);
+      }
+      if (mediaOperation === 'mp4-to-gif') {
+        addNumeric('width', advancedWidth);
+        addNumeric('fps', advancedFps);
+      }
+      if (mediaOperation === 'optimize-png' || mediaOperation === 'optimize-jpeg') {
+        addNumeric('quality', advancedQuality);
+      }
+      if (mediaOperation === 'optimize-gif') {
+        addNumeric('lossy', advancedLossy);
+        addNumeric('colors', advancedColors);
+      }
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return null;
+    }
     return JSON.stringify(payload);
   };
 
@@ -1879,6 +1903,20 @@ export default function Home() {
                     <option value="aggressive">Agressivo</option>
                   </select>
 
+                  {mediaOperation === 'mp4-to-mp3-segmented' ? (
+                    <label className="text-xs text-on-surface-variant">
+                      Minutos por parte
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={advancedSegmentMinutes}
+                        onChange={(e) => setAdvancedSegmentMinutes(e.target.value)}
+                        className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
+                      />
+                    </label>
+                  ) : null}
+
                   <button
                     type="button"
                     onClick={() => setShowAdvanced((v) => !v)}
@@ -1935,14 +1973,6 @@ export default function Home() {
                           <input
                             value={advancedColors}
                             onChange={(e) => setAdvancedColors(e.target.value)}
-                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
-                          />
-                        </label>
-                        <label className="text-xs text-on-surface-variant">
-                          Segment Minutes
-                          <input
-                            value={advancedSegmentMinutes}
-                            onChange={(e) => setAdvancedSegmentMinutes(e.target.value)}
                             className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>

@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const sharp = require('sharp');
+const archiver = require('archiver');
 const { mediaConfig } = require('./mediaConfig');
 const gifsicleBinary = String(process.env.GIFSICLE_BIN || 'gifsicle').trim() || 'gifsicle';
 
@@ -357,25 +358,33 @@ async function convertOggToMp3(job, outputPath, progressCb) {
 }
 
 async function createZipArchive(sourceDir, zipPath) {
-  try {
-    await runCommand('tar', ['-a', '-c', '-f', zipPath, '-C', sourceDir, '.']);
-    return;
-  } catch (error) {
-    if (process.platform !== 'win32') {
-      throw error;
-    }
-  }
+  await fs.promises.mkdir(path.dirname(zipPath), { recursive: true });
 
-  const escapedSource = sourceDir.replace(/'/g, "''");
-  const escapedZip = zipPath.replace(/'/g, "''");
-  await runCommand('powershell', [
-    '-NoProfile',
-    '-NonInteractive',
-    '-ExecutionPolicy',
-    'Bypass',
-    '-Command',
-    `Compress-Archive -Path '${escapedSource}\\*' -DestinationPath '${escapedZip}' -Force`,
-  ]);
+  await new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    let settled = false;
+
+    const finish = (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    };
+
+    output.on('close', () => finish());
+    output.on('error', finish);
+    archive.on('error', finish);
+
+    archive.pipe(output);
+    archive.directory(sourceDir, false);
+    void archive.finalize();
+  });
 }
 
 async function convertMp4ToMp3Segmented(job, outputDir, progressCb) {
