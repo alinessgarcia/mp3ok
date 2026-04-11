@@ -2,36 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Sonic Architect · Global Design Tokens ─────────────────────── */
 :root {
-  --background: #08111f;
-  --foreground: #dce7fb;
+  --surface:               #060e20;
+  --surface-container-low: #081329;
+  --surface-container:     #0c1934;
+  --surface-container-high:#101e3e;
+  --primary:               #699cff;
+  --primary-container:     #4388fd;
+  --secondary:             #d0bcff;
+  --tertiary:              #fbabff;
+  --on-surface:            #dee5ff;
+  --on-surface-variant:    #9baad6;
+  --outline-variant:       #38476d;
+  --error:                 #fd6f85;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
-  color: var(--foreground);
-  background:
-    radial-gradient(circle at 12% -6%, rgba(126, 224, 255, 0.18), transparent 30%),
-    radial-gradient(circle at 84% 4%, rgba(95, 147, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 50% 112%, rgba(31, 93, 176, 0.24), transparent 35%),
-    linear-gradient(180deg, #08111f 0%, #0b1326 46%, #101a31 100%);
-  font-family: Inter, var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background-color: #060e20;
+  color: #dee5ff;
+  font-family: 'Inter', system-ui, sans-serif;
   min-height: 100vh;
+  /* Subtle radial ambient glow */
+  background-image:
+    radial-gradient(circle at 15% 0%,  rgba(105, 156, 255, 0.10), transparent 35%),
+    radial-gradient(circle at 85% 0%,  rgba(251, 171, 255, 0.06), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(67, 136, 253, 0.08), transparent 40%);
   background-attachment: fixed;
 }
 
+/* ─── Glass panel ──────────────────────────────────────────────────── */
+.glass-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(20, 36, 73, 0.45);
+}
+
+/* ─── Primary gradient ─────────────────────────────────────────────── */
+.primary-gradient {
+  background: linear-gradient(135deg, #699cff 0%, #4388fd 100%);
+}
+.secondary-gradient {
+  background: linear-gradient(135deg, #d0bcff 0%, #8455ef 100%);
+}
+
+/* ─── Sonic input ──────────────────────────────────────────────────── */
+.sonic-input {
+  background: #000000;
+  border: 1px solid rgba(56, 71, 109, 0.55);
+  color: #dee5ff;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.sonic-input::placeholder { color: #9baad6; }
+.sonic-input:focus {
+  outline: none;
+  border-color: rgba(105, 156, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(105, 156, 255, 0.10);
+}
+
+/* ─── Button micro-interactions ────────────────────────────────────── */
 button {
-  transition: transform 140ms ease, filter 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  transition: transform 140ms ease, filter 180ms ease,
+              background-color 180ms ease, opacity 180ms ease;
 }
+button:active { transform: scale(0.97); }
 
-button:active {
-  transform: scale(0.985);
+/* ─── Progress bar pulse ───────────────────────────────────────────── */
+@keyframes sonic-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
 }
+.progress-active { animation: sonic-pulse 1.5s ease-in-out infinite; }
 
+/* ─── Live indicator dot ───────────────────────────────────────────── */
+@keyframes live-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+.live-dot { animation: live-blink 1.2s ease-in-out infinite; }
+
+/* ─── Fade-up entrance ─────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.38s ease-out forwards; }
+
+/* ─── Ghost border ─────────────────────────────────────────────────── */
+.ghost-border { border: 1px solid rgba(56, 71, 109, 0.15); }
+
+/* ─── Selection ────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(142, 203, 255, 0.95);
-  color: #08111f;
+  background: rgba(105, 156, 255, 0.38);
+  color: #dee5ff;
 }
+
+/* ─── Scrollbar (Sonic dark) ───────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #081329; }
+::-webkit-scrollbar-thumb { background: #38476d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #699cff; }

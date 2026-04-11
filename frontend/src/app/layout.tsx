@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'OpenDownloader Local',
-  description: 'Downloader, conversor e otimizador de midia local',
+  title: 'MP3ok · Sonic Architect',
+  description: 'Downloader, conversor, otimizador e Thumbnail Studio — processamento premium de midia em lote.',
 };
 
 export default function RootLayout({
@@ -24,10 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

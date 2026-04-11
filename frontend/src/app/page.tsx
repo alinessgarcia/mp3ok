@@ -1447,7 +1447,7 @@ export default function Home() {
       <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
         <div className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center px-6">
           <div className="w-full rounded-2xl border border-[#454652]/35 bg-[#171f33]/85 p-6 text-center">
-            <p className="text-sm text-[#c5c5d4]">Validando sessao...</p>
+            <p className="text-sm text-on-surface-variant">Validando sessao...</p>
           </div>
         </div>
       </main>
@@ -1456,13 +1456,13 @@ export default function Home() {
 
   if (!supabase) {
     return (
-      <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
+      <main className="min-h-screen bg-surface text-on-surface">
         <div className="mx-auto flex min-h-screen w-full max-w-xl items-center justify-center px-6">
-          <div className="w-full rounded-2xl border border-rose-400/40 bg-[#171f33]/85 p-6">
-            <h1 className="text-xl font-bold text-[#e2dfff]">Configurar Supabase no frontend</h1>
-            <p className="mt-3 text-sm text-[#c5c5d4]">
-              Defina <code>NEXT_PUBLIC_SUPABASE_URL</code> e <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> em
-              <code> frontend/.env.local</code> (ou nas variaveis do Netlify) e recarregue a pagina.
+          <div className="w-full rounded-xl border border-error/30 bg-surface-container-high p-6 backdrop-blur-sm">
+            <h1 className="text-xl font-bold text-on-surface">Configurar Supabase no frontend</h1>
+            <p className="mt-3 text-sm text-on-surface-variant">
+              Defina <code className="text-primary">NEXT_PUBLIC_SUPABASE_URL</code> e <code className="text-primary">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> em
+              <code className="text-secondary"> frontend/.env.local</code> (ou nas variaveis do Cloudflare) e recarregue a pagina.
             </p>
           </div>
         </div>
@@ -1472,15 +1472,15 @@ export default function Home() {
 
   if (!session) {
     return (
-      <main className="min-h-screen bg-[#0b1326] text-[#dae2fd]">
+      <main className="min-h-screen bg-surface text-on-surface">
         <div className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center px-6">
           <form
             onSubmit={handleLogin}
-            className="w-full rounded-2xl border border-[#454652]/35 bg-[#171f33]/85 p-6 shadow-[0_20px_60px_rgba(6,14,32,0.55)]"
+            className="w-full rounded-xl border border-outline-variant/20 bg-surface-container-high p-7 shadow-[0_24px_64px_rgba(0,0,0,0.5)] backdrop-blur-xl"
           >
-            <p className="text-xs uppercase tracking-[0.28em] text-[#8f909e]">MP3ok</p>
-            <h1 className="mt-2 text-2xl font-black text-[#e2dfff]">Entrar</h1>
-            <p className="mt-2 text-sm text-[#c5c5d4]">Acesso protegido por Supabase Authentication.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">MP3ok</p>
+            <h1 className="mt-2 text-2xl font-black text-on-surface">Entrar</h1>
+            <p className="mt-2 text-sm text-on-surface-variant">Acesso protegido por Supabase Authentication.</p>
 
             <div className="mt-5 space-y-3">
               <input
@@ -1489,7 +1489,7 @@ export default function Home() {
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="Seu e-mail"
                 required
-                className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm outline-none focus:border-[#c3c0ff]"
+                className="sonic-input h-11 w-full rounded-lg px-3 text-sm"
               />
               <input
                 type="password"
@@ -1497,16 +1497,16 @@ export default function Home() {
                 onChange={(e) => setLoginPassword(e.target.value)}
                 placeholder="Sua senha"
                 required
-                className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm outline-none focus:border-[#c3c0ff]"
+                className="sonic-input h-11 w-full rounded-lg px-3 text-sm"
               />
             </div>
 
-            {authError ? <p className="mt-3 text-sm text-rose-400">{authError}</p> : null}
+            {authError ? <p className="mt-3 text-sm text-error">{authError}</p> : null}
 
             <button
               type="submit"
               disabled={authLoading}
-              className="mt-5 h-11 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] disabled:opacity-60"
+              className="primary-gradient mt-5 h-11 w-full rounded-lg text-sm font-bold text-on-primary shadow-[0_10px_24px_rgba(105,156,255,0.25)] hover:brightness-110 disabled:opacity-60"
             >
               {authLoading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -1517,230 +1517,178 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(95,147,255,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(126,224,255,0.12),transparent_26%),linear-gradient(180deg,#08111f_0%,#0b1326_42%,#0f1830_100%)] text-[#dce7fb] selection:bg-[#8ecbff] selection:text-[#08111f]">
-      <nav className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#08111f]">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 py-4 sm:px-8">
-          <div />
-          <p className="text-center text-3xl font-black tracking-[0.08em] text-white sm:text-4xl">MP3ok</p>
-          <div className="flex items-center justify-self-end gap-3">
+    <main className="min-h-screen bg-surface text-on-surface">
+      {/* ── TopNav ────────────────────────────────────────── */}
+      <nav className="fixed top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
+          <span className="text-xl font-black tracking-tighter text-on-surface">MP3ok v3.0</span>
+          <div className="flex items-center gap-4">
             <div className="hidden text-right sm:block">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-[#8fb7ff]">Logado</p>
-              <p className="max-w-[220px] truncate text-xs text-[#dce7fb]">{session.user.email || '-'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">Logado</p>
+              <p className="max-w-[200px] truncate text-xs text-on-surface-variant">{session.user.email || '-'}</p>
             </div>
             <button
               type="button"
               onClick={handleLogout}
               disabled={authLoading}
-              className="h-9 rounded-xl border border-[#87b6ff]/20 bg-white/8 px-3 text-xs font-semibold text-[#dce7fb] disabled:opacity-60"
+              className="h-9 rounded-md border border-outline-variant/30 bg-surface-container-high px-3 text-xs font-semibold text-on-surface-variant hover:border-primary/40 hover:text-on-surface disabled:opacity-50"
             >
               Sair
             </button>
           </div>
         </div>
+        <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </nav>
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-14 pt-28 sm:px-8">
-        <section className="relative mb-5 overflow-hidden rounded-[28px] border border-[#8fb7ff]/18 bg-[rgba(244,248,255,0.92)] shadow-[0_18px_48px_rgba(10,22,43,0.18)] backdrop-blur-2xl">
-          <div className="grid gap-0 lg:grid-cols-[1.35fr_0.9fr]">
-            <article className={`relative overflow-hidden p-6 sm:p-7 bg-gradient-to-br ${currentPromo.accent}`}>
-              <img
-                src={currentPromo.imageUrl}
-                alt={currentPromo.title}
-                className="absolute inset-0 h-full w-full object-cover opacity-35"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_36%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.12),transparent_30%),linear-gradient(140deg,rgba(11,24,49,0.72),rgba(18,52,101,0.5))]" />
-              <div className="relative flex h-full flex-col justify-between gap-6">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.32em] text-white/75">{currentPromo.eyebrow}</p>
-                  <h2 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-white sm:text-3xl">
-                    {currentPromo.title}
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/82">{currentPromo.description}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">{currentPromo.meta}</span>
-                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">Banner fixo</span>
-                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1">Carrossel automatico</span>
-                </div>
-              </div>
-            </article>
-            <aside className="grid gap-3 p-4 sm:p-5">
-              {promoPreviewSlides.map(({ slide, index }) => (
-                <button
-                  key={`${slide.title}-${index}`}
-                  type="button"
-                  onClick={() => setPromoIndex(index)}
-                  className={`rounded-[20px] border p-4 text-left transition ${
-                    index === promoIndex
-                      ? 'border-[#6ea1ff]/55 bg-[#eaf2ff] shadow-[0_12px_30px_rgba(31,79,166,0.12)]'
-                      : 'border-[#d8e4f5] bg-white/80 hover:border-[#9dc3ff]'
-                  }`}
-                >
-                  <div className="mb-3 h-20 overflow-hidden rounded-xl border border-[#c8d9ef] bg-[#dbe8fa]">
-                    <img src={slide.imageUrl} alt={slide.title} className="h-full w-full object-cover" loading="lazy" />
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#6f86a8]">{slide.eyebrow}</p>
-                  <p className="mt-2 text-sm font-semibold leading-5 text-[#10203a]">{slide.title}</p>
-                  <p className="mt-2 text-xs leading-5 text-[#4f627f]">{slide.description}</p>
-                </button>
-              ))}
-              <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[#d8e4f5] bg-white/72 px-4 py-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f86a8]">Rotacao</p>
-                  <p className="text-sm font-semibold text-[#10203a]">
-                    {promoIndex + 1}/{PROMO_SLIDES.length}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {PROMO_SLIDES.map((slide, index) => (
-                    <button
-                      key={slide.meta}
-                      type="button"
-                      onClick={() => setPromoIndex(index)}
-                      className={`h-2.5 rounded-full transition ${
-                        index === promoIndex ? 'w-8 bg-[#1f5db0]' : 'w-2.5 bg-[#b9cbe6]'
-                      }`}
-                      aria-label={`Ir para anuncio ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </aside>
-          </div>
-        </section>
 
-        <header className="relative overflow-hidden rounded-[32px] border border-[#cad9ee] bg-[linear-gradient(135deg,rgba(250,251,255,0.98),rgba(240,244,251,0.96),rgba(228,235,246,0.96))] p-8 text-[#10203a] shadow-[0_24px_70px_rgba(10,22,43,0.18)]">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(31,79,166,0.08),transparent_28%),radial-gradient(circle_at_86%_0%,rgba(126,224,255,0.12),transparent_26%)]" />
+
+        {/* ── Hero + Tool Nav ─────────────────────────────── */}
+        <header className="relative overflow-hidden rounded-xl border border-outline-variant/15 bg-surface-container-high p-7 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+          {/* ambient glow */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(105,156,255,0.12),transparent_40%),radial-gradient(circle_at_85%_0%,rgba(251,171,255,0.06),transparent_35%)]" />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#c9d9ef] bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#1f5db0]">
-              <span className="h-2 w-2 rounded-full bg-[#1f5db0] shadow-[0_0_10px_rgba(31,93,176,0.75)]" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-surface-container-low px-3 py-1 text-[10px] font-bold uppercase tracking-[0.26em] text-primary">
+              <span className="live-dot h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_#699cff]" />
               Processamento em tempo real
             </div>
-            <h1 className="mt-4 max-w-4xl font-serif text-4xl font-bold leading-tight text-[#10203a] sm:text-6xl">
-              MP3ok.
-              <span className="block text-[#1f5db0]">
-                Downloader + Conversor + Otimizador + Thumbnail Studio
-              </span>
+            <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tighter text-on-surface sm:text-5xl">
+              MP3ok.<span className="text-primary">Downloader</span> +{' '}
+              <span className="text-on-surface-variant">Conversor</span> +{' '}
+              <span className="text-tertiary">Thumbnail Studio</span>
             </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#4f627f] sm:text-base">
+            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-on-surface-variant sm:text-base">
               Cole links, processe arquivos em lote e gere resultados com fila automatica em um painel editorial, rapido e legivel.
             </p>
           </div>
 
+          {/* Tab navigation — Stitch-style cards */}
           <div className="relative mt-8 grid gap-3 sm:grid-cols-3">
             <button
               type="button"
               onClick={() => setActiveTab('url')}
-              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+              className={`group relative overflow-hidden rounded-lg p-5 text-left transition-all ${
                 activeTab === 'url'
-                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
-                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
+                  ? 'bg-surface-container-highest border border-primary/30 shadow-[0_0_0_1px_rgba(105,156,255,0.15)]'
+                  : 'bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container'
               }`}
             >
-              Downloader
+              <span className="label text-[10px] font-bold uppercase tracking-[0.08em] text-primary block mb-1">Premium Tool</span>
+              <h3 className="text-base font-bold text-on-surface">Downloader</h3>
+              <p className="mt-1 text-xs text-on-surface-variant">Links de alta qualidade em segundos.</p>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('media')}
-              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+              className={`group relative overflow-hidden rounded-lg p-5 text-left transition-all ${
                 activeTab === 'media'
-                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
-                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
+                  ? 'bg-surface-container-highest border border-secondary/30 shadow-[0_0_0_1px_rgba(208,188,255,0.15)]'
+                  : 'bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container'
               }`}
             >
-              Conversor
+              <span className="label text-[10px] font-bold uppercase tracking-[0.08em] text-secondary block mb-1">Multiformat</span>
+              <h3 className="text-base font-bold text-on-surface">Conversor</h3>
+              <p className="mt-1 text-xs text-on-surface-variant">Transcodificacao ultra-veloz em lote.</p>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('thumb')}
-              className={`h-12 rounded-full text-sm font-bold uppercase tracking-[0.08em] transition ${
+              className={`group relative overflow-hidden rounded-lg p-5 text-left transition-all ${
                 activeTab === 'thumb'
-                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white shadow-[0_14px_28px_rgba(31,93,176,0.22)]'
-                  : 'border border-[#cbd8ea] bg-white/76 text-[#10203a] hover:bg-white'
+                  ? 'bg-surface-container-highest border border-tertiary/25 shadow-[0_0_0_1px_rgba(251,171,255,0.12)]'
+                  : 'bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container'
               }`}
             >
-              Thumbnails
+              <span className="label text-[10px] font-bold uppercase tracking-[0.08em] text-tertiary block mb-1">Art Studio</span>
+              <h3 className="text-base font-bold text-on-surface">Thumbnails</h3>
+              <p className="mt-1 text-xs text-on-surface-variant">Geracao automatica de artes visuais.</p>
             </button>
           </div>
         </header>
 
         {activeTab === 'url' ? (
           <section className="mt-6 space-y-6">
-            <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="url"
-                  placeholder="Cole uma URL de video..."
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="h-12 flex-1 rounded-2xl border border-[#cad9ee] bg-white/90 px-4 text-sm text-[#10203a] outline-none placeholder:text-[#8aa0be] focus:border-[#1f5db0] focus:bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={fetchInfo}
-                  disabled={loadingInfo || !url.trim()}
-                  className="h-12 rounded-2xl bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(31,93,176,0.22)] disabled:opacity-50"
-                >
-                  {loadingInfo ? 'Buscando...' : 'Buscar midia'}
-                </button>
-                {loadingInfo ? (
+            {/* URL input workspace */}
+            <div className="rounded-xl border border-outline-variant/15 bg-surface-container-high overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+              <div className="p-6 border-b border-outline-variant/10">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">🔗</span>
+                    <input
+                      type="url"
+                      placeholder="Cole aqui o link do video ou audio..."
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      className="sonic-input h-12 w-full rounded-lg pl-10 pr-4 text-sm"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={cancelInfoSearch}
-                    className="h-12 rounded-2xl border border-[#e08a8a] bg-[#fff5f5] px-4 text-sm font-semibold text-[#b42318]"
+                    onClick={fetchInfo}
+                    disabled={loadingInfo || !url.trim()}
+                    className="primary-gradient h-12 rounded-lg px-7 text-sm font-bold text-on-primary shadow-[0_10px_24px_rgba(105,156,255,0.22)] hover:brightness-110 disabled:opacity-50"
                   >
-                    Cancelar
+                    {loadingInfo ? 'Buscando...' : 'PROCESSAR ⚡'}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={resetUrlSearch}
-                  className="h-12 rounded-2xl border border-[#cad9ee] bg-white/90 px-4 text-sm font-semibold text-[#10203a] hover:bg-white"
-                >
+                  {loadingInfo ? (
+                    <button
+                      type="button"
+                      onClick={cancelInfoSearch}
+                      className="h-12 rounded-lg border border-error/40 bg-surface-container-low px-4 text-sm font-semibold text-error"
+                    >
+                      Cancelar
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={resetUrlSearch}
+                    className="h-12 rounded-lg border border-outline-variant/25 bg-surface-container-low px-4 text-sm font-semibold text-on-surface-variant hover:text-on-surface"
+                  >
                   Limpar busca
                 </button>
               </div>
-              {urlError ? <p className="mt-3 text-sm text-[#b42318]">{urlError}</p> : null}
+              {urlError ? <p className="mt-2 text-sm text-error">{urlError}</p> : null}
+              </div>
             </div>
 
+            {/* Video info card */}
             {videoInfo ? (
-              <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
+              <div className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                  <div className="h-32 w-full overflow-hidden rounded-2xl border border-[#d8e4f5] bg-white/90 sm:w-56">
+                  <div className="h-28 w-full overflow-hidden rounded-lg bg-surface-container-highest sm:w-48 flex-shrink-0">
                     {videoInfo.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={videoInfo.thumbnail} alt={videoInfo.title} className="h-full w-full object-cover" />
                     ) : null}
                   </div>
                   <div className="flex-1">
-                    <h2 className="font-serif text-2xl font-bold leading-tight text-[#10203a]">{videoInfo.title}</h2>
+                    <h2 className="text-xl font-bold leading-tight text-on-surface">{videoInfo.title}</h2>
                     {videoInfo.isPlaylist ? (
-                      <p className="mt-1 text-sm leading-6 text-[#4f627f]">
+                      <p className="mt-1 text-sm leading-6 text-on-surface-variant">
                         Playlist detectada: {videoInfo.entryCount || videoInfo.entries?.length || 0} item(ns). O download sera feito em fila, um por vez.
                       </p>
                     ) : (
-                      <p className="mt-1 text-sm leading-6 text-[#4f627f]">
+                      <p className="mt-1 text-sm leading-6 text-on-surface-variant">
                         Duracao: {Math.floor(videoInfo.duration / 60)}:{(videoInfo.duration % 60).toString().padStart(2, '0')}
                       </p>
                     )}
                     {videoInfo.isPlaylist ? (
-                      <div className="mt-4 rounded-[24px] border border-[#d8e4f5] bg-[#f6f9fd] p-4">
+                      <div className="mt-4 rounded-lg border border-outline-variant/15 bg-surface-container-low p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6f86a8]">Controle da playlist</p>
-                            <p className="mt-1 text-xs leading-5 text-[#4f627f]">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-on-surface-variant">Controle da playlist</p>
+                            <p className="mt-1 text-xs leading-5 text-on-surface-variant">
                               Escolha baixar a lista inteira ou apenas um item especifico.
                             </p>
                           </div>
-                          <div className="inline-flex rounded-full border border-[#cad9ee] bg-white p-1 shadow-[0_6px_16px_rgba(10,22,43,0.06)]">
+                          <div className="inline-flex rounded-full border border-outline-variant/25 bg-surface-container p-1">
                             <button
                               type="button"
                               onClick={() => setPlaylistDownloadMode('all')}
                               className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
                                 playlistDownloadMode === 'all'
-                                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white'
-                                  : 'text-[#4f627f] hover:text-[#10203a]'
+                                  ? 'primary-gradient text-on-primary'
+                                  : 'text-on-surface-variant hover:text-on-surface'
                               }`}
                             >
                               Lista inteira
@@ -1750,8 +1698,8 @@ export default function Home() {
                               onClick={() => setPlaylistDownloadMode('single')}
                               className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
                                 playlistDownloadMode === 'single'
-                                  ? 'bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] text-white'
-                                  : 'text-[#4f627f] hover:text-[#10203a]'
+                                  ? 'primary-gradient text-on-primary'
+                                  : 'text-on-surface-variant hover:text-on-surface'
                               }`}
                             >
                               Apenas 1 item
@@ -1760,12 +1708,12 @@ export default function Home() {
                         </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                           <label className="block">
-                            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6f86a8]">Item da lista</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">Item da lista</span>
                             <select
                               value={selectedPlaylistItemId}
                               onChange={(e) => setSelectedPlaylistItemId(e.target.value)}
                               disabled={playlistDownloadMode !== 'single'}
-                              className="mt-1 h-11 w-full rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a] disabled:cursor-not-allowed disabled:bg-[#f3f6fb] disabled:text-[#7f92ad]"
+                              className="mt-1 h-11 w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {(videoInfo.entries || []).map((entry, index) => (
                                 <option key={entry.id} value={entry.id}>
@@ -1774,7 +1722,7 @@ export default function Home() {
                               ))}
                             </select>
                           </label>
-                          <div className="rounded-2xl border border-[#d8e4f5] bg-white/85 px-3 py-2 text-xs leading-5 text-[#4f627f]">
+                          <div className="rounded-lg border border-outline-variant/15 bg-surface-container px-3 py-2 text-xs leading-5 text-on-surface-variant">
                             {playlistDownloadMode === 'single'
                               ? 'Baixa apenas o item escolhido.'
                               : 'Mantem o fluxo atual e envia todos os itens em fila.'}
@@ -1786,7 +1734,7 @@ export default function Home() {
                       <select
                         value={format}
                         onChange={(e) => setFormat(e.target.value as 'video' | 'audio')}
-                        className="h-11 rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a]"
+                        className="h-11 rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface"
                       >
                         <option value="video">MP4 Video</option>
                         <option value="audio">MP3 Audio</option>
@@ -1794,7 +1742,7 @@ export default function Home() {
                       <select
                         value={quality}
                         onChange={(e) => setQuality(e.target.value)}
-                        className="h-11 rounded-2xl border border-[#cad9ee] bg-white/90 px-3 text-sm text-[#10203a]"
+                        className="h-11 rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface disabled:opacity-50"
                         disabled={format === 'audio'}
                       >
                         <option value="best">Best</option>
@@ -1804,7 +1752,7 @@ export default function Home() {
                       </select>
                       <button
                         onClick={startDownload}
-                        className="h-11 rounded-2xl bg-gradient-to-br from-[#0f2a56] to-[#1f5db0] px-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,42,86,0.18)] hover:brightness-110"
+                        className="primary-gradient h-11 rounded-lg px-4 text-sm font-bold text-on-primary shadow-[0_10px_24px_rgba(105,156,255,0.22)] hover:brightness-110"
                       >
                         {videoInfo.isPlaylist
                           ? playlistDownloadMode === 'single'
@@ -1818,23 +1766,27 @@ export default function Home() {
               </div>
             ) : null}
 
+            {/* URL tasks / Download queue */}
             {urlTasks.length ? (
-              <div className="rounded-[28px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_16px_38px_rgba(10,22,43,0.12)] backdrop-blur-xl">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold text-[#10203a]">Fila de downloads por URL</h3>
+              <div className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="live-dot h-1.5 w-1.5 rounded-full bg-primary" />
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fila de Downloads ({urlTasks.length})</h3>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={removeCompletedUrlTasks}
                       disabled={!urlTasks.some((task) => task.status === 'completed' || task.status === 'error')}
-                      className="rounded-xl border border-[#cad9ee] bg-white/80 px-3 py-1 text-xs font-semibold text-[#10203a] disabled:opacity-50"
+                      className="rounded-md border border-outline-variant/25 bg-surface-container-low px-3 py-1 text-xs font-semibold text-on-surface-variant disabled:opacity-40"
                     >
                       Remover concluidos
                     </button>
                     <button
                       type="button"
                       onClick={clearUrlTasks}
-                      className="rounded-xl border border-[#e08a8a] bg-[#fff5f5] px-3 py-1 text-xs font-semibold text-[#b42318]"
+                      className="rounded-md border border-error/30 bg-surface-container-low px-3 py-1 text-xs font-semibold text-error"
                     >
                       Limpar lista
                     </button>
@@ -1842,29 +1794,39 @@ export default function Home() {
                 </div>
                 <div className="space-y-3">
                   {urlTasks.map((task) => (
-                    <div key={task.id} className="rounded-2xl border border-[#d8e4f5] bg-white/88 p-4">
-                      <div className="flex justify-between gap-3">
-                        <p className="truncate text-sm font-semibold text-[#10203a]">{task.title}</p>
-                        <p className="text-xs text-[#6f86a8]">
-                          {task.status === 'error' ? 'Falhou' : task.status === 'completed' ? 'Concluido' : `${task.progress.toFixed(1)}%`}
-                        </p>
+                    <div key={task.id} className="rounded-lg border border-outline-variant/15 bg-surface-container-low p-4 flex items-center gap-4">
+                      {task.thumbnail ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={task.thumbnail} alt={task.title} className="h-14 w-14 rounded-md object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-md bg-surface-container-highest flex-shrink-0" />
+                      )}
+                      <div className="flex-grow min-w-0">
+                        <p className="truncate text-sm font-bold text-on-surface">{task.title}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <div className="flex-grow bg-surface-container-lowest h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                task.status === 'error' ? 'bg-error' : task.status === 'completed' ? 'bg-secondary' : 'bg-primary progress-active'
+                              }`}
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          </div>
+                          <span className={`text-xs font-mono flex-shrink-0 ${
+                            task.status === 'error' ? 'text-error' : task.status === 'completed' ? 'text-secondary' : 'text-primary'
+                          }`}>
+                            {task.status === 'error' ? 'Falhou' : task.status === 'completed' ? '✓' : `${task.progress.toFixed(0)}%`}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-on-surface-variant">{task.size}</p>
                       </div>
-                      <div className="mt-2 h-2 w-full rounded-full bg-[#e8eff8]">
-                        <div
-                          className={`h-2 rounded-full ${task.status === 'error' ? 'bg-[#e5484d]' : task.status === 'completed' ? 'bg-[#1a9f6d]' : 'bg-[#1f5db0]'}`}
-                          style={{ width: `${task.progress}%` }}
-                        />
-                      </div>
-                      <p className="mt-2 text-xs text-[#6f86a8]">{task.size}</p>
-                      <div className="mt-3">
-                        <button
-                          type="button"
-                          onClick={() => removeSingleUrlTask(task.id)}
-                          className="rounded-xl border border-[#e08a8a] bg-[#fff5f5] px-3 py-1 text-xs font-semibold text-[#b42318]"
-                        >
-                          Remover
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeSingleUrlTask(task.id)}
+                        className="flex-shrink-0 text-on-surface-variant hover:text-error transition-colors text-lg leading-none"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -1874,18 +1836,18 @@ export default function Home() {
         ) : activeTab === 'media' ? (
           <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             <div className="space-y-4">
-              <form onSubmit={createMediaJob} className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
-                <h3 className="text-lg font-semibold">Novo job de conversao/otimizacao</h3>
+              <form onSubmit={createMediaJob} className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+                <h3 className="text-lg font-bold text-on-surface">Novo job de conversao/otimizacao</h3>
                 <div className="mt-4 space-y-3">
                   <input
                     key={mediaInputKey}
                     type="file"
                     multiple
                     onChange={(e) => setMediaFiles(Array.from(e.target.files || []))}
-                    className="block w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 py-3 text-sm"
+                    className="block w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm text-on-surface"
                     accept="video/*,audio/*,image/gif,image/png,image/jpeg"
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-on-surface-variant">
                     {mediaFiles.length > 0
                       ? `${mediaFiles.length} arquivo(s) selecionado(s): ${mediaFiles
                           .slice(0, 3)
@@ -1896,7 +1858,7 @@ export default function Home() {
                   <select
                     value={mediaOperation}
                     onChange={(e) => setMediaOperation(e.target.value as MediaOperation)}
-                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                    className="h-11 w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface"
                   >
                     <option value="optimize-gif">Otimizar GIF</option>
                     <option value="optimize-png">Otimizar PNG</option>
@@ -1910,7 +1872,7 @@ export default function Home() {
                   <select
                     value={preset}
                     onChange={(e) => setPreset(e.target.value as Preset)}
-                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                    className="h-11 w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface"
                   >
                     <option value="light">Leve</option>
                     <option value="balanced">Balanced</option>
@@ -1920,68 +1882,68 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setShowAdvanced((v) => !v)}
-                    className="h-11 w-full rounded-xl border border-slate-600 text-sm font-semibold text-slate-200"
+                    className="h-11 w-full rounded-lg border border-outline-variant/25 bg-surface-container-low text-sm font-semibold text-on-surface-variant hover:text-on-surface"
                   >
                     {showAdvanced ? 'Ocultar avancado' : 'Mostrar avancado'}
                   </button>
 
                   {showAdvanced ? (
-                    <div className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
+                    <div className="rounded-lg border border-outline-variant/15 bg-surface-container-low p-4">
                       <div className="grid gap-2 sm:grid-cols-2">
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           CRF
                           <input
                             value={advancedCrf}
                             onChange={(e) => setAdvancedCrf(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           Width
                           <input
                             value={advancedWidth}
                             onChange={(e) => setAdvancedWidth(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           FPS
                           <input
                             value={advancedFps}
                             onChange={(e) => setAdvancedFps(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           Quality
                           <input
                             value={advancedQuality}
                             onChange={(e) => setAdvancedQuality(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           GIF Lossy
                           <input
                             value={advancedLossy}
                             onChange={(e) => setAdvancedLossy(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           GIF Colors
                           <input
                             value={advancedColors}
                             onChange={(e) => setAdvancedColors(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
-                        <label className="text-xs text-slate-300">
+                        <label className="text-xs text-on-surface-variant">
                           Segment Minutes
                           <input
                             value={advancedSegmentMinutes}
                             onChange={(e) => setAdvancedSegmentMinutes(e.target.value)}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                            className="sonic-input mt-1 h-10 w-full rounded-md px-3 text-sm"
                           />
                         </label>
                       </div>
@@ -1991,19 +1953,18 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={mediaLoading}
-                    className="h-12 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] hover:brightness-110 disabled:opacity-60"
+                    className="secondary-gradient h-12 w-full rounded-lg text-sm font-bold text-on-primary shadow-[0_10px_24px_rgba(208,188,255,0.2)] hover:brightness-110 disabled:opacity-60"
                   >
                     {mediaLoading ? 'Processando...' : mediaFiles.length > 1 ? 'Criar jobs em lote' : 'Criar job'}
                   </button>
                 </div>
               </form>
-
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={removeSelectedMedia}
                   disabled={mediaLoading || selectedMediaIds.size === 0}
-                  className="h-11 rounded-xl border border-rose-400 bg-slate-900 text-sm font-semibold text-rose-300 disabled:opacity-50"
+                  className="h-11 rounded-lg border border-error/30 bg-surface-container-low text-sm font-semibold text-error disabled:opacity-40"
                 >
                   Remover selecionados ({selectedMediaIds.size})
                 </button>
@@ -2011,68 +1972,73 @@ export default function Home() {
                   type="button"
                   onClick={clearMediaQueue}
                   disabled={mediaLoading || mediaJobs.length === 0}
-                  className="h-11 rounded-xl border border-slate-500 bg-slate-900 text-sm font-semibold text-slate-200 disabled:opacity-50"
+                  className="h-11 rounded-lg border border-outline-variant/25 bg-surface-container-low text-sm font-semibold text-on-surface-variant disabled:opacity-40"
                 >
                   Limpar fila
                 </button>
               </div>
 
-              {mediaError ? <p className="text-sm text-rose-400">{mediaError}</p> : null}
-              {mediaNotice ? <p className="text-sm text-emerald-400">{mediaNotice}</p> : null}
+              {mediaError ? <p className="text-sm text-error">{mediaError}</p> : null}
+              {mediaNotice ? <p className="text-sm text-secondary">{mediaNotice}</p> : null}
             </div>
 
-            <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">Fila de midia</h3>
+            <div className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_16px_32px_rgba(0,0,0,0.35)]">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fila de midia</h3>
                 <button
                   type="button"
                   onClick={toggleSelectAll}
                   disabled={mediaJobs.length === 0}
-                  className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                  className="rounded-md border border-outline-variant/25 bg-surface-container-low px-3 py-1 text-xs font-semibold text-on-surface-variant disabled:opacity-40"
                 >
                   {selectedMediaIds.size === mediaJobs.length && mediaJobs.length > 0 ? 'Desmarcar todos' : 'Marcar todos'}
                 </button>
               </div>
 
               {mediaJobs.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+                <p className="rounded-lg border border-dashed border-outline-variant/25 p-6 text-sm text-on-surface-variant text-center">
                   Nenhum job de midia ainda.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {mediaJobs.map((job) => (
-                    <article key={job.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
+                    <article key={job.id} className="rounded-lg border border-outline-variant/15 bg-surface-container-low p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <input
                             type="checkbox"
                             checked={selectedMediaIds.has(job.id)}
                             onChange={() => toggleMediaSelection(job.id)}
-                            className="mt-1 h-4 w-4"
+                            className="mt-1 h-4 w-4 accent-primary"
                           />
                           <div>
-                            <p className="text-sm font-semibold text-slate-100">{job.outputName || job.inputName}</p>
-                            <p className="mt-1 text-xs text-slate-400">
-                              {job.operation} | {job.preset} | {formatBytes(job.sizeIn)} {'->'} {formatBytes(job.sizeOut)}
+                            <p className="text-sm font-bold text-on-surface">{job.outputName || job.inputName}</p>
+                            <p className="mt-1 text-xs text-on-surface-variant">
+                              {job.operation} | {job.preset} | {formatBytes(job.sizeIn)} {'→'} {formatBytes(job.sizeOut)}
                             </p>
                           </div>
                         </div>
-                        <span className="rounded-full border border-slate-600 px-2 py-1 text-xs uppercase tracking-wide text-slate-300">
+                        <span className="rounded-full border border-outline-variant/25 px-2 py-1 text-[10px] uppercase tracking-wide text-on-surface-variant">
                           {job.status}
                         </span>
                       </div>
 
-                      <div className="mt-3 h-2 w-full rounded-full bg-slate-800">
-                        <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${job.progress || 0}%` }} />
+                      <div className="mt-3 h-1.5 w-full rounded-full bg-surface-container-lowest">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${
+                            job.status === 'completed' ? 'bg-secondary' : job.status === 'failed' ? 'bg-error' : 'bg-primary progress-active'
+                          }`}
+                          style={{ width: `${job.progress || 0}%` }}
+                        />
                       </div>
-                      <p className="mt-2 text-xs text-slate-400">{job.progressLabel || '-'}</p>
-                      {job.error ? <p className="mt-1 text-xs text-rose-400">{job.error}</p> : null}
+                      <p className="mt-2 text-xs text-on-surface-variant">{job.progressLabel || '-'}</p>
+                      {job.error ? <p className="mt-1 text-xs text-error">{job.error}</p> : null}
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         {job.status === 'completed' ? (
                           <a
                             href={buildAuthorizedUrl(`${apiBase}/api/media/jobs/${job.id}/download`, accessToken)}
-                            className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
+                            className="primary-gradient rounded-md px-3 py-2 text-xs font-bold text-on-primary"
                           >
                             Baixar agora
                           </a>
@@ -2080,7 +2046,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => removeSingleMedia(job.id)}
-                          className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-300"
+                          className="rounded-md border border-error/30 px-3 py-2 text-xs font-semibold text-error"
                         >
                           Remover
                         </button>
@@ -2094,21 +2060,29 @@ export default function Home() {
         ) : (
           <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
             <div className="space-y-4">
-              <form onSubmit={createThumbnailJobs} className="rounded-2xl border border-[#454652]/30 bg-[#171f33]/80 p-6 backdrop-blur-xl shadow-[0_18px_40px_rgba(6,14,32,0.35)]">
-                <h3 className="text-lg font-semibold">Thumbnail Studio</h3>
+              <form onSubmit={createThumbnailJobs} className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+                <h3 className="text-lg font-bold text-on-surface">Thumbnail Studio</h3>
                 <div className="mt-4 space-y-3">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button
                       type="button"
                       onClick={() => setThumbInputMode('file')}
-                      className={`h-11 rounded-xl text-sm font-semibold ${thumbInputMode === 'file' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white'}`}
+                      className={`h-11 rounded-lg text-sm font-semibold transition ${
+                        thumbInputMode === 'file'
+                          ? 'primary-gradient text-on-primary'
+                          : 'border border-outline-variant/25 bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                      }`}
                     >
                       Arquivos
                     </button>
                     <button
                       type="button"
                       onClick={() => setThumbInputMode('url')}
-                      className={`h-11 rounded-xl text-sm font-semibold ${thumbInputMode === 'url' ? 'bg-white text-slate-900' : 'bg-slate-700 text-white'}`}
+                      className={`h-11 rounded-lg text-sm font-semibold transition ${
+                        thumbInputMode === 'url'
+                          ? 'primary-gradient text-on-primary'
+                          : 'border border-outline-variant/25 bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                      }`}
                     >
                       URLs
                     </button>
@@ -2121,10 +2095,10 @@ export default function Home() {
                         type="file"
                         multiple
                         onChange={(e) => setThumbFiles(Array.from(e.target.files || []))}
-                        className="block w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-4 py-3 text-sm"
+                        className="block w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-4 py-3 text-sm text-on-surface"
                         accept="image/*,video/*"
                       />
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-on-surface-variant">
                         {thumbFiles.length > 0
                           ? `${thumbFiles.length} arquivo(s) selecionado(s).`
                           : 'Selecione imagens, GIFs ou videos para gerar thumbnails.'}
@@ -2135,14 +2109,14 @@ export default function Home() {
                       value={thumbUrlsText}
                       onChange={(e) => setThumbUrlsText(e.target.value)}
                       placeholder="Cole URLs (uma por linha). Suporta URL direta e link de arquivo do Google Drive."
-                      className="h-32 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 py-2 text-sm outline-none focus:border-[#c3c0ff]"
+                      className="sonic-input h-32 w-full rounded-lg px-3 py-2 text-sm"
                     />
                   )}
 
                   <select
                     value={thumbPreset}
                     onChange={(e) => setThumbPreset(e.target.value as ThumbnailPreset)}
-                    className="h-11 w-full rounded-xl border border-[#454652]/35 bg-[#060e20] px-3 text-sm"
+                    className="h-11 w-full rounded-lg border border-outline-variant/25 bg-surface-container-lowest px-3 text-sm text-on-surface"
                   >
                     <option value="16x9">16:9 (1280x720)</option>
                     <option value="1x1">1:1 (1080x1080)</option>
@@ -2152,7 +2126,7 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={thumbLoading}
-                    className="h-12 w-full rounded-xl bg-gradient-to-br from-[#c3c0ff] to-[#5250a4] text-sm font-bold text-[#100563] shadow-[0_10px_24px_rgba(195,192,255,0.35)] hover:brightness-110 disabled:opacity-60"
+                    className="secondary-gradient h-12 w-full rounded-lg text-sm font-bold text-on-primary shadow-[0_10px_24px_rgba(208,188,255,0.2)] hover:brightness-110 disabled:opacity-60"
                   >
                     {thumbLoading ? 'Gerando...' : 'Gerar thumbnails'}
                   </button>
@@ -2164,7 +2138,7 @@ export default function Home() {
                   type="button"
                   onClick={removeSelectedThumbs}
                   disabled={thumbLoading || selectedThumbIds.size === 0}
-                  className="h-11 rounded-xl border border-rose-400 bg-slate-900 text-sm font-semibold text-rose-300 disabled:opacity-50"
+                  className="h-11 rounded-lg border border-error/30 bg-surface-container-low text-sm font-semibold text-error disabled:opacity-40"
                 >
                   Remover selecionados ({selectedThumbIds.size})
                 </button>
@@ -2172,68 +2146,73 @@ export default function Home() {
                   type="button"
                   onClick={clearThumbQueue}
                   disabled={thumbLoading || thumbJobs.length === 0}
-                  className="h-11 rounded-xl border border-slate-500 bg-slate-900 text-sm font-semibold text-slate-200 disabled:opacity-50"
+                  className="h-11 rounded-lg border border-outline-variant/25 bg-surface-container-low text-sm font-semibold text-on-surface-variant disabled:opacity-40"
                 >
                   Limpar fila
                 </button>
               </div>
 
-              {thumbError ? <p className="text-sm text-rose-400">{thumbError}</p> : null}
-              {thumbNotice ? <p className="text-sm text-emerald-400">{thumbNotice}</p> : null}
+              {thumbError ? <p className="text-sm text-error">{thumbError}</p> : null}
+              {thumbNotice ? <p className="text-sm text-secondary">{thumbNotice}</p> : null}
             </div>
 
-            <div className="rounded-2xl border border-[#454652]/28 bg-[#171f33]/72 p-6 backdrop-blur-xl shadow-[0_16px_32px_rgba(6,14,32,0.3)]">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">Fila de thumbnails</h3>
+            <div className="rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_16px_32px_rgba(0,0,0,0.35)]">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">Fila de thumbnails</h3>
                 <button
                   type="button"
                   onClick={toggleSelectAllThumb}
                   disabled={thumbJobs.length === 0}
-                  className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-200 disabled:opacity-50"
+                  className="rounded-md border border-outline-variant/25 bg-surface-container-low px-3 py-1 text-xs font-semibold text-on-surface-variant disabled:opacity-40"
                 >
                   {selectedThumbIds.size === thumbJobs.length && thumbJobs.length > 0 ? 'Desmarcar todos' : 'Marcar todos'}
                 </button>
               </div>
 
               {thumbJobs.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+                <p className="rounded-lg border border-dashed border-outline-variant/25 p-6 text-sm text-on-surface-variant text-center">
                   Nenhum job de thumbnail ainda.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {thumbJobs.map((job) => (
-                    <article key={job.id} className="rounded-xl border border-[#454652]/25 bg-[#060e20]/78 p-4">
+                    <article key={job.id} className="rounded-lg border border-outline-variant/15 bg-surface-container-low p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <input
                             type="checkbox"
                             checked={selectedThumbIds.has(job.id)}
                             onChange={() => toggleThumbSelection(job.id)}
-                            className="mt-1 h-4 w-4"
+                            className="mt-1 h-4 w-4 accent-primary"
                           />
                           <div>
-                            <p className="text-sm font-semibold text-slate-100">{job.outputName || job.inputName}</p>
-                            <p className="mt-1 text-xs text-slate-400">
-                              {job.preset} | {formatBytes(job.sizeIn)} {'->'} {formatBytes(job.sizeOut)}
+                            <p className="text-sm font-bold text-on-surface">{job.outputName || job.inputName}</p>
+                            <p className="mt-1 text-xs text-on-surface-variant">
+                              {job.preset} | {formatBytes(job.sizeIn)} {'→'} {formatBytes(job.sizeOut)}
                             </p>
                           </div>
                         </div>
-                        <span className="rounded-full border border-slate-600 px-2 py-1 text-xs uppercase tracking-wide text-slate-300">
+                        <span className="rounded-full border border-outline-variant/25 px-2 py-1 text-[10px] uppercase tracking-wide text-on-surface-variant">
                           {job.status}
                         </span>
                       </div>
 
-                      <div className="mt-3 h-2 w-full rounded-full bg-slate-800">
-                        <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${job.progress || 0}%` }} />
+                      <div className="mt-3 h-1.5 w-full rounded-full bg-surface-container-lowest">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${
+                            job.status === 'completed' ? 'bg-tertiary' : job.status === 'failed' ? 'bg-error' : 'bg-primary progress-active'
+                          }`}
+                          style={{ width: `${job.progress || 0}%` }}
+                        />
                       </div>
-                      <p className="mt-2 text-xs text-slate-400">{job.progressLabel || '-'}</p>
-                      {job.error ? <p className="mt-1 text-xs text-rose-400">{job.error}</p> : null}
+                      <p className="mt-2 text-xs text-on-surface-variant">{job.progressLabel || '-'}</p>
+                      {job.error ? <p className="mt-1 text-xs text-error">{job.error}</p> : null}
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         {job.status === 'completed' ? (
                           <a
                             href={buildAuthorizedUrl(`${apiBase}/api/thumbnails/jobs/${job.id}/download`, accessToken)}
-                            className="rounded-lg bg-gradient-to-br from-[#9cf0ff] to-[#00daf3] px-3 py-2 text-xs font-semibold text-[#00363d]"
+                            className="primary-gradient rounded-md px-3 py-2 text-xs font-bold text-on-primary"
                           >
                             Baixar agora
                           </a>
@@ -2241,7 +2220,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => removeSingleThumb(job.id)}
-                          className="rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-300"
+                          className="rounded-md border border-error/30 px-3 py-2 text-xs font-semibold text-error"
                         >
                           Remover
                         </button>
@@ -2254,132 +2233,179 @@ export default function Home() {
           </section>
         )}
 
-        <section className="mt-8 rounded-[32px] border border-[#cad9ee] bg-[rgba(248,250,255,0.92)] p-6 text-[#10203a] shadow-[0_18px_48px_rgba(10,22,43,0.12)] backdrop-blur-xl">
-          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-[#1f5db0]">Newsroom / briefing</p>
-              <h3 className="mt-2 font-serif text-2xl font-bold text-[#10203a]">Radar Retro BR</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4f627f]">
-                Coleta automatica de noticias sobre musica brasileira antiga, raridades e entrevistas com leitura mais clara.
-              </p>
+        {/* ── Promo Carousel ─────────────────────────────── */}
+        <section className="relative mt-8 overflow-hidden rounded-xl border border-outline-variant/15 bg-surface-container-high shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+          <div className="grid gap-0 lg:grid-cols-[1.35fr_0.9fr]">
+            <article className={`relative overflow-hidden p-6 sm:p-7 bg-gradient-to-br ${currentPromo.accent}`}>
+              <img
+                src={currentPromo.imageUrl}
+                alt={currentPromo.title}
+                className="absolute inset-0 h-full w-full object-cover opacity-30"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#060e20]/70 via-transparent to-transparent" />
+              <div className="relative flex h-full flex-col justify-between gap-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-white/65">{currentPromo.eyebrow}</p>
+                  <h2 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-white sm:text-3xl">
+                    {currentPromo.title}
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">{currentPromo.description}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/65">
+                  <span className="rounded-full border border-white/15 bg-white/8 px-3 py-1">{currentPromo.meta}</span>
+                  <span className="rounded-full border border-white/15 bg-white/8 px-3 py-1">Banner fixo</span>
+                  <span className="rounded-full border border-white/15 bg-white/8 px-3 py-1">Carrossel automatico</span>
+                </div>
+              </div>
+            </article>
+            <aside className="grid gap-3 p-4 sm:p-5 bg-surface-container">
+              {promoPreviewSlides.map(({ slide, index }) => (
+                <button
+                  key={`${slide.title}-${index}`}
+                  type="button"
+                  onClick={() => setPromoIndex(index)}
+                  className={`rounded-lg border p-3 text-left transition-all ${
+                    index === promoIndex
+                      ? 'border-primary/40 bg-surface-container-high shadow-[0_0_0_1px_rgba(105,156,255,0.2)]'
+                      : 'border-outline-variant/15 bg-surface-container-low hover:border-primary/25'
+                  }`}
+                >
+                  <div className="mb-2 h-16 overflow-hidden rounded-md bg-surface-container-highest">
+                    <img src={slide.imageUrl} alt={slide.title} className="h-full w-full object-cover opacity-70" loading="lazy" />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-on-surface-variant">{slide.eyebrow}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-on-surface">{slide.title}</p>
+                </button>
+              ))}
+              <div className="flex items-center justify-between gap-3 rounded-md border border-outline-variant/15 bg-surface-container-low px-3 py-2">
+                <p className="text-[10px] text-on-surface-variant">{promoIndex + 1}/{PROMO_SLIDES.length}</p>
+                <div className="flex items-center gap-1.5">
+                  {PROMO_SLIDES.map((slide, index) => (
+                    <button
+                      key={slide.meta}
+                      type="button"
+                      onClick={() => setPromoIndex(index)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        index === promoIndex ? 'w-6 bg-primary' : 'w-1.5 bg-outline-variant'
+                      }`}
+                      aria-label={`Ir para anuncio ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        {/* ── Radar de IA ──────────────────────────────────── */}
+        <section className="mt-8 rounded-xl border border-outline-variant/15 bg-surface-container-high p-6 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-primary text-lg">🧠</span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-primary">IA Briefing · Novidades</p>
+                <h3 className="mt-1 text-2xl font-black italic tracking-tighter text-on-surface">Radar de IA</h3>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => fetchNews(true)}
               disabled={newsLoading}
-              className="h-10 rounded-full bg-gradient-to-br from-[#1f5db0] to-[#7fb6ff] px-4 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-[0_10px_24px_rgba(31,93,176,0.22)] disabled:opacity-50"
+              className="primary-gradient h-10 rounded-full px-5 text-xs font-bold uppercase tracking-[0.14em] text-on-primary shadow-[0_8px_20px_rgba(105,156,255,0.22)] hover:brightness-110 disabled:opacity-50"
             >
               {newsLoading ? 'Atualizando...' : 'Atualizar feed'}
             </button>
           </div>
 
-          {newsError ? <p className="mb-4 text-sm text-[#b42318]">{newsError}</p> : null}
+          {newsError ? <p className="mb-4 text-sm text-error">{newsError}</p> : null}
 
           {newsItems.length === 0 ? (
-            <p className="rounded-[22px] border border-dashed border-[#cad9ee] bg-white/80 p-4 text-sm text-[#4f627f]">
-              Nenhuma noticia encontrada ainda. Clique em &quot;Atualizar feed&quot; para buscar agora.
+            <p className="rounded-lg border border-dashed border-outline-variant/25 p-6 text-sm text-on-surface-variant text-center">
+              Nenhuma novidade de IA encontrada ainda. Clique em &quot;Atualizar feed&quot; para buscar as últimas novidades de inteligência artificial.
             </p>
           ) : (
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.84fr]">
-              <article className="overflow-hidden rounded-[28px] border border-[#d8e4f5] bg-white/92 shadow-[0_14px_30px_rgba(10,22,43,0.08)]">
-                {featuredNews?.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={featuredNews.image_url}
-                    alt={featuredNews.title}
-                    className="h-64 w-full object-cover sm:h-72"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-64 items-center justify-center bg-[linear-gradient(135deg,rgba(31,93,176,0.14),rgba(126,224,255,0.12))] text-sm font-semibold uppercase tracking-[0.24em] text-[#1f5db0] sm:h-72">
-                    Destaque editorial
-                  </div>
-                )}
-                <div className="p-5 sm:p-6">
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[#6f86a8]">
-                    <span className="rounded-full bg-[#eaf2ff] px-2 py-1 font-bold text-[#1f5db0]">
-                      {featuredNews.source_name || 'Fonte'}
-                    </span>
-                    {featuredNews.published_at ? <span>{formatNewsDate(featuredNews.published_at)}</span> : null}
-                    {typeof featuredNews.score === 'number' ? <span>Score {featuredNews.score.toFixed(1)}</span> : null}
-                  </div>
-                  <a
-                    href={featuredNews.source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 block font-serif text-3xl font-bold leading-tight text-[#10203a] transition hover:text-[#1f5db0]"
-                  >
-                    {featuredNews.title}
-                  </a>
-                  {featuredNews.summary ? (
-                    <p className="mt-3 text-sm leading-7 text-[#4f627f]">{featuredNews.summary}</p>
-                  ) : null}
-                  {featuredNews.tags ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {featuredNews.tags.split(',').map((tag) => (
-                        <span
-                          key={tag.trim()}
-                          className="rounded-full border border-[#d8e4f5] bg-[#f6f9fd] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5f7391]"
-                        >
-                          {tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </article>
-
-              <div className="space-y-4">
-                <div className="rounded-[24px] border border-[#d8e4f5] bg-[#0f2a56] p-5 text-white shadow-[0_14px_30px_rgba(15,42,86,0.16)]">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8ecbff]">Ultimos briefings</p>
-                  <p className="mt-2 text-sm leading-6 text-white/78">
-                    A coluna lateral prioriza leitura rapida, sem poluir o painel principal.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {briefingNews.map((item) => (
-                    <article key={item.source_url} className="rounded-[24px] border border-[#d8e4f5] bg-white/90 p-4 shadow-[0_8px_20px_rgba(10,22,43,0.06)]">
-                      <div className="flex items-start gap-3">
-                        {item.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="h-20 w-24 flex-shrink-0 rounded-2xl object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex h-20 w-24 flex-shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(31,93,176,0.16),rgba(126,224,255,0.12))] text-[10px] font-bold uppercase tracking-[0.18em] text-[#1f5db0]">
-                            Briefing
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f86a8]">
-                            <span className="text-[#1f5db0]">{item.source_name || 'Fonte'}</span>
-                            {item.published_at ? <span>{formatNewsDate(item.published_at)}</span> : null}
-                          </div>
-                          <a
-                            href={item.source_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="line-clamp-2 text-sm font-semibold leading-6 text-[#10203a] transition hover:text-[#1f5db0]"
-                          >
-                            {item.title}
-                          </a>
-                          {item.summary ? (
-                            <p className="mt-1 line-clamp-2 text-xs leading-6 text-[#4f627f]">{item.summary}</p>
-                          ) : null}
-                        </div>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {newsItems.slice(0, 3).map((item, i) => (
+                <article key={item.source_url} className="flex flex-col gap-4">
+                  <div className="aspect-video rounded-xl overflow-hidden bg-surface-container-low">
+                    {item.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-surface-container-highest text-xs text-on-surface-variant uppercase tracking-widest">
+                        Briefing
                       </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
+                    )}
+                  </div>
+                  <div>
+                    <span className={`text-[10px] font-bold uppercase tracking-[0.08em] block mb-2 ${
+                      i === 0 ? 'text-secondary' : i === 1 ? 'text-tertiary' : 'text-primary'
+                    }`}>
+                      {item.source_name || 'Fonte'}
+                      {item.published_at ? ` · ${formatNewsDate(item.published_at)}` : ''}
+                    </span>
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-lg font-bold leading-snug text-on-surface hover:text-primary transition-colors"
+                    >
+                      {item.title}
+                    </a>
+                    {item.summary ? (
+                      <p className="mt-2 text-sm text-on-surface-variant line-clamp-2 leading-relaxed">{item.summary}</p>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
             </div>
           )}
+
+          {/* Briefing sidebar — additional items as list */}
+          {briefingNews.length > 0 && newsItems.length > 3 ? (
+            <div className="mt-6 space-y-3 border-t border-outline-variant/10 pt-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-on-surface-variant mb-4">Mais novidades de IA</p>
+              {briefingNews.map((item) => (
+                <article key={item.source_url} className="flex gap-4 items-start rounded-lg border border-outline-variant/10 bg-surface-container-low p-3">
+                  {item.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.image_url} alt={item.title} className="h-14 w-14 flex-shrink-0 rounded-md object-cover" loading="lazy" />
+                  ) : (
+                    <div className="h-14 w-14 flex-shrink-0 rounded-md bg-surface-container-highest" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary mb-1">{item.source_name}</p>
+                    <a href={item.source_url} target="_blank" rel="noreferrer" className="line-clamp-2 text-sm font-semibold text-on-surface hover:text-primary transition-colors">
+                      {item.title}
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </section>
       </div>
+
+      {/* ── Footer ──────────────────────────────────────── */}
+      <footer className="bg-surface-container-lowest mt-16">
+        <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-8 py-10">
+          <p className="text-sm font-bold text-on-surface-variant">MP3ok v3.0 Sonic Architect</p>
+          <div className="flex flex-wrap justify-center gap-6 text-xs text-on-surface-variant">
+            <a href="#" className="hover:text-tertiary transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-tertiary transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-tertiary transition-colors">API Documentation</a>
+            <a href="#" className="hover:text-tertiary transition-colors">Contact</a>
+          </div>
+          <p className="text-xs text-on-surface-variant opacity-40">© 2025 MP3ok · Sonic Architect. All rights reserved.</p>
+        </div>
+      </footer>
     </main>
   );
 }
